@@ -1,34 +1,51 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { cakesData } from "@/data/cakesData";
-import { useCart } from "@/context/CartContext";
-import { useWishlist } from "@/context/WishlistContext";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProductBySlug, fetchProductById, clearSelectedProduct } from "@/features/products/productSlice";
+import { fetchReviews, createReview, updateReview, deleteReview } from "@/features/reviews/reviewSlice";
+import { useAuth } from "@/context/AuthContext";
+import { productApi } from "@/features/products/productApi";
+import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Edit2, Trash } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   Heart,
   Star,
-  ShoppingBag,
   Sparkles,
   Calendar,
   Clock,
-  Egg,
   MessageSquare,
   Upload,
   Plus,
   HelpCircle,
-  TrendingUp
+  TrendingUp,
+  MapPin,
+  Share2,
+  CheckCircle2,
+  XCircle,
+  X
 } from "lucide-react";
+import ProductCard from "@/components/product/ProductCard";
+
+const VALID_PINCODES = ["10001", "10002", "400001", "400002", "110001", "560001"];
 
 export default function CakeDetails() {
-  const { id } = useParams();
+  const { id: slug } = useParams();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
-  const cake = cakesData.find((c) => c.id === id);
+  const { selectedProduct: cake, loading, error } = useSelector((state) => state.products);
+  const { user } = useAuth();
+  const { items: reviews, breakdown, loading: reviewsLoading } = useSelector((state) => state.reviews);
+  const [relatedCakes, setRelatedCakes] = useState([]);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
 
   // Default Customization States
   const [selectedVariant, setSelectedVariant] = useState(null);
@@ -47,23 +64,101 @@ export default function CakeDetails() {
   const [deliveryDate, setDeliveryDate] = useState("");
   const [deliveryTimeSlot, setDeliveryTimeSlot] = useState("Afternoon (12 PM - 4 PM)");
 
+  // Reviews & Comments States
+  const [newRating, setNewRating] = useState(5);
+  const [newComment, setNewComment] = useState("");
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   // Active view image (supporting small gallery)
   const [activeImage, setActiveImage] = useState("");
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+
+  // Pincode Availability States
+  const [pincode, setPincode] = useState("");
+  const [pincodeStatus, setPincodeStatus] = useState("idle"); // idle | checking | available | unavailable
+
+  useEffect(() => {
+    // If the slug parameter matches the shape of a MongoDB ObjectId (24 hex characters), fetch by ID.
+    // Otherwise, fetch by URL slug.
+    if (/^[0-9a-fA-F]{24}$/.test(slug)) {
+      dispatch(fetchProductById(slug));
+    } else {
+      dispatch(fetchProductBySlug(slug));
+    }
+    
+    return () => {
+      dispatch(clearSelectedProduct());
+    };
+  }, [dispatch, slug]);
+
+  // Load Recently Viewed list from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("cake_recently_viewed");
+      if (saved) {
+        setRecentlyViewed(JSON.parse(saved));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [slug]);
 
   useEffect(() => {
     if (cake) {
       // Default to first variant
       setSelectedVariant(cake.variants?.[0] || { flavor: "Classic", size: "1 kg", price: cake.basePrice });
-      setActiveImage(cake.image);
+      setActiveImage(cake.image || cake.thumbnail);
+
+      // Fetch reviews for this product
+      dispatch(fetchReviews({ productId: cake._id }));
+
+      // Load related products based on categories/cakeTypes dynamically from backend
+      productApi.getRelated(cake._id, 4)
+        .then((res) => {
+          setRelatedCakes(res.data?.data || []);
+        })
+        .catch((err) => console.error("Error loading related:", err));
+
+      // Update Recently Viewed history
+      try {
+        const itemToSave = {
+          id: cake.slug || cake._id,
+          slug: cake.slug || cake._id,
+          name: cake.name,
+          image: cake.image || cake.thumbnail,
+          basePrice: cake.basePrice,
+          rating: cake.rating,
+          reviewsCount: cake.reviewsCount,
+          discount: cake.discount || 0
+        };
+
+        const existing = JSON.parse(localStorage.getItem("cake_recently_viewed") || "[]");
+        const filtered = existing.filter((item) => item.id !== itemToSave.id);
+        const updated = [itemToSave, ...filtered].slice(0, 4);
+        
+        localStorage.setItem("cake_recently_viewed", JSON.stringify(updated));
+      } catch (err) {
+        console.error("Failed to save recently viewed:", err);
+      }
     }
   }, [cake]);
 
-  if (!cake) {
+  if (loading) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center bg-[#FFF8F9] py-12">
-        <h2 className="text-2xl font-extrabold text-gray-900 mb-4">Cake Not Found</h2>
-        <p className="text-gray-500 mb-6">The sweet creation you are looking for does not exist or has been eaten!</p>
-        <Button asChild className="bg-pink-500 hover:bg-pink-600 rounded-full font-bold">
+      <div className="min-h-[60vh] flex flex-col items-center justify-center bg-background py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+        <p className="text-sm text-muted-foreground">Loading sweet details...</p>
+      </div>
+    );
+  }
+
+  if (error || !cake) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center bg-background py-12">
+        <h2 className="text-2xl font-extrabold text-foreground mb-4">Cake Not Found</h2>
+        <p className="text-muted-foreground mb-6">The sweet creation you are looking for does not exist or has been eaten!</p>
+        <Button asChild className="bg-primary hover:bg-primary rounded-full font-bold">
           <Link to="/shop">Back to Shop</Link>
         </Button>
       </div>
@@ -71,17 +166,17 @@ export default function CakeDetails() {
   }
 
   // Price calculations based on variants and options
-  const isWishlisted = isInWishlist(cake.id);
+  const isWishlisted = isInWishlist(cake.slug || cake.id);
   const discountRate = cake.discount || 0;
   const rawPrice = selectedVariant ? selectedVariant.price : cake.basePrice;
   const discountVal = (rawPrice * discountRate) / 100;
   
   // Extra options cost
   let extrasCost = 0;
-  if (isEggless) extrasCost += 1.50; // extra charge for eggless preparation
-  if (addCandles) extrasCost += 2.00;
-  if (addKnife) extrasCost += 1.00;
-  if (addGreetingCard) extrasCost += 3.00;
+  if (isEggless) extrasCost += (cake.egglessPremium || 50); // standard Indian rupee premium
+  if (addCandles) extrasCost += 15;
+  if (addKnife) extrasCost += 10;
+  if (addGreetingCard) extrasCost += 30;
 
   const finalUnitPrice = rawPrice - discountVal + extrasCost;
 
@@ -98,18 +193,32 @@ export default function CakeDetails() {
     }
   };
 
-  const handleAddToCart = () => {
-    if (!deliveryDate) {
-      toast.error("Please choose a Delivery Date before adding to cart!");
-      document.getElementById("delivery-date-input")?.focus();
-      return;
-    }
+  const checkPincode = (e) => {
+    e.preventDefault();
+    if (!pincode.trim()) return;
 
-    // Build line item add data
-    const itemData = {
-      cakeId: cake.id,
+    setPincodeStatus("checking");
+    setTimeout(() => {
+      if (VALID_PINCODES.includes(pincode.trim())) {
+        setPincodeStatus("available");
+        toast.success(`We deliver to ${pincode}! Same-day delivery available.`);
+      } else {
+        setPincodeStatus("unavailable");
+        toast.error(`Sorry, delivery is not available for ${pincode} currently.`);
+      }
+    }, 800);
+  };
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success("Product link copied to clipboard!");
+  };
+
+  const getCustomizationPayload = () => {
+    return {
+      cakeId: cake._id,
       name: cake.name,
-      image: cake.image,
+      image: cake.image || cake.thumbnail,
       flavor: selectedVariant ? selectedVariant.flavor : "Classic",
       weight: selectedVariant ? selectedVariant.size : "1 kg",
       isEggless,
@@ -127,39 +236,112 @@ export default function CakeDetails() {
         cardMessage: addGreetingCard ? cardMessage : ""
       }
     };
+  };
 
-    addToCart(itemData);
-    toast.success(`${cake.name} customized & added to cart!`, {
+  const handleAddToCart = () => {
+    if (!deliveryDate) {
+      toast.error("Please choose a Delivery Date before adding to cart!");
+      document.getElementById("delivery-date-input")?.focus();
+      return;
+    }
+
+    addToCart(getCustomizationPayload());
+    toast.success(`${cake.name} added to cart!`, {
       action: {
         label: "Checkout Now",
-        onClick: () => window.location.assign("/cart")
+        onClick: () => navigate("/cart")
       }
     });
   };
 
-  // Find related cakes based on sharing categories
-  const relatedCakes = cakesData
-    .filter((c) => c.id !== cake.id && c.categories?.some((cat) => cake.categories?.includes(cat)))
-    .slice(0, 4);
+  const handleBuyNow = async () => {
+    if (!deliveryDate) {
+      toast.error("Please choose a Delivery Date before purchasing!");
+      document.getElementById("delivery-date-input")?.focus();
+      return;
+    }
+
+    // Add to cart, wait for dispatch completion, then redirect
+    await addToCart(getCustomizationPayload());
+    toast.success("Preparing your checkout summary...");
+    navigate("/checkout");
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error("Please login to submit a review.", {
+        action: {
+          label: "Login",
+          onClick: () => navigate(`/login?redirect=/cake/${slug}`)
+        }
+      });
+      return;
+    }
+
+    if (newRating < 1 || newRating > 5) {
+      toast.error("Please select a rating between 1 and 5 stars.");
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      if (editingReviewId) {
+        await dispatch(updateReview({ reviewId: editingReviewId, reviewData: { rating: newRating, comment: newComment } })).unwrap();
+        toast.success("Review updated successfully!");
+        setEditingReviewId(null);
+      } else {
+        await dispatch(createReview({ productId: cake._id, reviewData: { rating: newRating, comment: newComment } })).unwrap();
+        toast.success("Review submitted successfully!");
+      }
+      setNewComment("");
+      setNewRating(5);
+    } catch (err) {
+      toast.error(err || "Failed to submit review. Note: Only 1 review per product allowed.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleReviewDelete = async (reviewId) => {
+    if (window.confirm("Are you sure you want to delete your review?")) {
+      try {
+        await dispatch(deleteReview(reviewId)).unwrap();
+        toast.success("Review deleted successfully.");
+      } catch (err) {
+        toast.error(err || "Failed to delete review.");
+      }
+    }
+  };
+
+  const handleEditInit = (review) => {
+    setEditingReviewId(review._id);
+    setNewRating(review.rating);
+    setNewComment(review.comment);
+    document.getElementById("review-form-section")?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
-    <div className="bg-[#FFF8F9] min-h-screen py-12">
+    <div className="bg-background min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Main Product Panel */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white p-6 sm:p-8 rounded-3xl border border-pink-50 shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 bg-card p-6 sm:p-8 rounded-3xl border border-border shadow-sm">
           
           {/* Left Column: Image Gallery & Previews */}
           <div className="space-y-6">
-            <div className="relative aspect-square overflow-hidden rounded-2xl border border-pink-50 bg-pink-50/10 group cursor-zoom-in">
+            <div 
+              onClick={() => setIsZoomOpen(true)}
+              className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-secondary group cursor-zoom-in"
+            >
               <img
                 src={activeImage}
                 alt={cake.name}
-                className="w-full h-full object-cover group-hover:scale-115 transition-transform duration-700 ease-out"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
               />
               {/* Floating Discount Tag */}
               {discountRate > 0 && (
-                <span className="absolute top-4 left-4 bg-pink-500 text-white font-extrabold px-3 py-1 rounded-full text-xs shadow-md">
+                <span className="absolute top-4 left-4 bg-primary text-white font-extrabold px-3 py-1 rounded-full text-xs shadow-md">
                   {discountRate}% SPECIAL OFF
                 </span>
               )}
@@ -168,28 +350,30 @@ export default function CakeDetails() {
             {/* Thumbnails */}
             <div className="flex gap-4 overflow-x-auto pb-2">
               <button
-                onClick={() => setActiveImage(cake.image)}
-                className={`h-20 w-20 rounded-xl overflow-hidden border-2 shrink-0 bg-pink-50/30 ${
-                  activeImage === cake.image ? "border-pink-500" : "border-pink-100"
+                onClick={() => setActiveImage(cake.image || cake.thumbnail)}
+                className={`h-20 w-20 rounded-xl overflow-hidden border-2 shrink-0 bg-secondary ${
+                  activeImage === (cake.image || cake.thumbnail) ? "border-primary" : "border-border"
                 }`}
               >
-                <img src={cake.image} alt={cake.name} className="h-full w-full object-cover" />
+                <img src={cake.image || cake.thumbnail} alt={cake.name} className="h-full w-full object-cover" />
               </button>
               
-              {/* Mocking secondary details images using variant images */}
-              {cake.variants?.map((v, idx) => (
+              {/* Gallery Images */}
+              {cake.gallery?.map((img, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setActiveImage(cake.image)} // uses base image for mock detail
-                  className={`h-20 w-20 rounded-xl overflow-hidden border-2 shrink-0 bg-pink-50/30 border-pink-100/50`}
+                  onClick={() => setActiveImage(img)}
+                  className={`h-20 w-20 rounded-xl overflow-hidden border-2 shrink-0 bg-secondary ${
+                    activeImage === img ? "border-primary" : "border-border"
+                  }`}
                 >
-                  <img src={cake.image} alt="variant thumbnail" className="h-full w-full object-cover filter saturate-75 brightness-95" />
+                  <img src={img} alt="gallery thumbnail" className="h-full w-full object-cover" />
                 </button>
               ))}
             </div>
 
             {/* Trust factors */}
-            <div className="p-4 rounded-2xl bg-pink-50/50 border border-pink-100/50 grid grid-cols-2 gap-4 text-xs text-gray-500 text-left">
+            <div className="p-4 rounded-2xl bg-secondary border border-border grid grid-cols-2 gap-4 text-xs text-muted-foreground text-left">
               <div>🎂 <strong>100% Eggless Option:</strong> Fresh eggless substitute available.</div>
               <div>🚚 <strong>Safely Transported:</strong> Shipped in cold-storage vans.</div>
             </div>
@@ -200,313 +384,483 @@ export default function CakeDetails() {
             <div className="space-y-4">
               
               {/* Breadcrumb category */}
-              <div className="text-xs font-bold text-pink-500 uppercase tracking-widest">
-                {cake.categories?.join("  |  ")}
-              </div>
-
-              {/* Title & Actions */}
-              <div className="flex justify-between items-start gap-4">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">
-                  {cake.name}
-                </h1>
+              <div className="text-xs font-bold text-primary uppercase tracking-widest flex items-center justify-between">
+                <span>{cake.categories?.map(c => c.name || c).join("  |  ")}</span>
                 
-                {/* Wishlist toggle */}
-                <button
-                  onClick={() => toggleWishlist(cake.id)}
-                  className={`p-3 rounded-full border shadow-sm transition-all focus:outline-none shrink-0 ${
-                    isWishlisted
-                      ? "bg-pink-500 border-pink-500 text-white"
-                      : "bg-pink-50/50 border-pink-100 text-gray-400 hover:text-pink-500 hover:bg-pink-50"
-                  }`}
-                >
-                  <Heart className={`h-5 w-5 ${isWishlisted ? "fill-current" : ""}`} />
-                </button>
-              </div>
+                <div className="flex gap-2">
+                  {/* Share button */}
+                  <button 
+                    onClick={handleShare}
+                    className="p-2 rounded-full border border-border bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground shadow-sm transition"
+                    title="Share product link"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </button>
 
-              {/* Reviews Rating Info */}
-              <div className="flex items-center gap-1.5 text-sm">
-                <div className="flex text-amber-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-4 w-4 ${
-                        i < Math.floor(cake.rating) ? "fill-current" : "text-gray-200"
-                      }`}
-                    />
-                  ))}
+                  {/* Wishlist toggle */}
+                  <button
+                    onClick={() => toggleWishlist(cake.slug || cake.id)}
+                    className={`p-2 rounded-full border shadow-sm transition-all focus:outline-none ${
+                      isWishlisted
+                        ? "bg-primary border-primary text-white"
+                        : "bg-secondary border-border text-muted-foreground hover:text-primary"
+                    }`}
+                  >
+                    <Heart className="h-4 w-4" fill={isWishlisted ? "currentColor" : "none"} />
+                  </button>
                 </div>
-                <span className="font-bold text-gray-800">{cake.rating}</span>
-                <span className="text-gray-300">|</span>
-                <span className="text-xs text-gray-500">({cake.reviewsCount} verified reviews)</span>
               </div>
 
-              {/* Price summary */}
-              <div className="flex items-baseline gap-2 pt-2">
-                {discountRate > 0 && (
-                  <span className="text-sm text-gray-400 line-through">
-                    ${(rawPrice + extrasCost).toFixed(2)}
-                  </span>
-                )}
-                <span className="text-3xl font-black text-pink-500">
-                  ${finalUnitPrice.toFixed(2)}
+              {/* Title */}
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground leading-tight">
+                {cake.name}
+              </h1>
+
+              {/* Price Details */}
+              <div className="flex items-baseline gap-3">
+                <span className="text-3xl font-black text-foreground">
+                  ₹{finalUnitPrice.toFixed(2)}
                 </span>
-                <span className="text-xs text-gray-450 font-semibold ml-1">(Inclusive of taxes)</span>
+                {discountRate > 0 && (
+                  <>
+                    <span className="text-sm font-semibold text-muted-foreground line-through">
+                      ₹{rawPrice.toFixed(2)}
+                    </span>
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                      Save ₹{discountVal.toFixed(2)}
+                    </span>
+                  </>
+                )}
               </div>
 
               {/* Description */}
-              <p className="text-sm text-gray-650 leading-relaxed font-normal">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 {cake.description}
               </p>
 
-              <hr className="border-pink-50 my-6" />
-
-              {/* CUSTOMIZATION CONTROLS */}
-              <div className="space-y-6">
-                
-                {/* 1. Flavor Selection */}
-                <div className="space-y-2">
-                  <Label className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
-                    <Sparkles className="h-4 w-4 text-pink-500" /> Choose Cake Flavor
-                  </Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {cake.variants?.map((v, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedVariant(v)}
-                        className={`px-4 py-3 rounded-xl border text-xs font-semibold text-center transition-all ${
-                          selectedVariant?.flavor === v.flavor
-                            ? "bg-pink-500 border-pink-500 text-white font-bold shadow-md shadow-pink-100"
-                            : "bg-white border-pink-100 text-gray-700 hover:bg-pink-50/50"
-                        }`}
-                      >
-                        {v.flavor}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 2. Weight Selection */}
-                <div className="space-y-2">
-                  <Label className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
-                    🎂 Weight / Serving Size
-                  </Label>
-                  <div className="flex flex-wrap gap-3">
-                    {cake.variants
-                      ?.filter((v) => v.flavor === selectedVariant?.flavor)
-                      .map((v, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setSelectedVariant(v)}
-                          className={`px-5 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
-                            selectedVariant?.size === v.size
-                              ? "bg-pink-500 border-pink-500 text-white font-bold shadow-md shadow-pink-100"
-                              : "bg-white border-pink-100 text-gray-750 hover:bg-pink-50/50"
-                          }`}
-                        >
-                          {v.size} {v.size === "0.5 kg" ? "(4-6 servings)" : v.size === "1 kg" ? "(8-12 servings)" : "(15+ servings)"}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-
-                {/* 3. Eggless Upgrade Option */}
-                <div className="p-4 bg-pink-50/40 border border-pink-100/50 rounded-2xl flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 shrink-0">
-                      <Egg className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-800 text-xs">Make it 100% Eggless</h4>
-                      <p className="text-[10px] text-gray-400">Baked with premium vegetarian alternatives (+ $1.50)</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setIsEggless(!isEggless)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
-                      isEggless ? "bg-pink-500" : "bg-gray-200"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                        isEggless ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                {/* 4. Message on Cake */}
-                <div className="space-y-2">
-                  <Label htmlFor="message-box" className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
-                    <MessageSquare className="h-4 w-4 text-pink-500" /> Text Message on Cake
-                  </Label>
-                  <Input
-                    id="message-box"
-                    placeholder="E.g., Happy Birthday Sarah! (Max 25 characters)"
-                    maxLength={25}
-                    value={cakeMessage}
-                    onChange={(e) => setCakeMessage(e.target.value)}
-                    className="bg-pink-50/20 border-pink-100 focus-visible:ring-pink-500 rounded-xl"
+              {/* Pincode availability check block */}
+              <div className="p-4 bg-secondary/50 rounded-2xl border border-border space-y-3">
+                <Label htmlFor="pincode" className="text-xs font-bold text-foreground">Check Delivery Pincode</Label>
+                <form onSubmit={checkPincode} className="flex gap-2">
+                  <Input 
+                    id="pincode"
+                    type="text" 
+                    placeholder="Enter delivery pincode (e.g. 400001)"
+                    value={pincode}
+                    onChange={(e) => setPincode(e.target.value)}
+                    maxLength={6}
+                    className="bg-card border-border rounded-xl text-xs"
                   />
-                </div>
+                  <Button type="submit" size="sm" className="bg-primary hover:bg-primary font-bold text-xs rounded-xl">
+                    Check
+                  </Button>
+                </form>
 
-                {/* 5. Photo Cake Upload */}
-                {cake.categories?.includes("Photo Cakes") && (
-                  <div className="space-y-3">
-                    <Label className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
-                      <Upload className="h-4 w-4 text-pink-500" /> Upload Image for Cake Icing
-                    </Label>
-                    <div className="flex items-center gap-4">
-                      <label className="flex items-center justify-center gap-2 border border-dashed border-pink-300 hover:border-pink-500 bg-pink-50/10 hover:bg-pink-50/40 px-4 py-3 rounded-xl cursor-pointer text-xs font-semibold text-pink-650 transition-all shrink-0">
-                        <Upload className="h-4 w-4" />
-                        <span>Choose File</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handlePhotoUpload}
-                        />
-                      </label>
-                      
-                      {photoPreview ? (
-                        <div className="relative h-12 w-12 rounded-lg overflow-hidden border border-pink-100">
-                          <img src={photoPreview} alt="upload preview" className="h-full w-full object-cover" />
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-gray-400">Supported formats: JPEG, PNG. Max 5MB.</span>
-                      )}
-                    </div>
+                {pincodeStatus === "checking" && <div className="text-xs text-muted-foreground animate-pulse">Verifying delivery codes...</div>}
+                {pincodeStatus === "available" && (
+                  <div className="text-xs text-green-600 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="h-4 w-4" /> Cake delivery available at this location!
                   </div>
                 )}
-
-                {/* 6. Celebration Add-ons */}
-                <div className="space-y-3 border-t border-pink-50 pt-6">
-                  <h4 className="font-bold text-gray-800 text-sm">Add Party Essentials</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    
-                    <button
-                      onClick={() => setAddCandles(!addCandles)}
-                      className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
-                        addCandles ? "bg-pink-500 border-pink-500 text-white" : "bg-white border-pink-100 text-gray-600"
-                      }`}
-                    >
-                      <span>Candles (+ $2.00)</span>
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                    
-                    <button
-                      onClick={() => setAddKnife(!addKnife)}
-                      className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
-                        addKnife ? "bg-pink-500 border-pink-500 text-white" : "bg-white border-pink-100 text-gray-600"
-                      }`}
-                    >
-                      <span>Knife (+ $1.00)</span>
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-
-                    <button
-                      onClick={() => setAddGreetingCard(!addGreetingCard)}
-                      className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
-                        addGreetingCard ? "bg-pink-500 border-pink-500 text-white" : "bg-white border-pink-100 text-gray-600"
-                      }`}
-                    >
-                      <span>Gift Card (+ $3.00)</span>
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
+                {pincodeStatus === "unavailable" && (
+                  <div className="text-xs text-destructive font-semibold flex items-center gap-1">
+                    <XCircle className="h-4 w-4" /> Sorry, we don't deliver cakes here yet.
                   </div>
+                )}
+              </div>
 
-                  {addGreetingCard && (
-                    <Textarea
-                      placeholder="Write message inside greeting card..."
-                      value={cardMessage}
-                      onChange={(e) => setCardMessage(e.target.value)}
-                      className="mt-3 bg-pink-50/20 border-pink-100 focus-visible:ring-pink-500 rounded-xl"
-                      rows={2}
-                    />
-                  )}
+              {/* 1. Size & Variant Selection */}
+              <div className="space-y-2.5 pt-2">
+                <Label className="text-xs font-extrabold uppercase tracking-wide text-foreground">Select Weight / Flavor Variant *</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {cake.variants?.map((v, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedVariant(v)}
+                      className={`p-3 border rounded-xl text-left transition-all focus:outline-none ${
+                        selectedVariant?.flavor === v.flavor && selectedVariant?.size === v.size
+                          ? "border-primary bg-primary/5 text-primary shadow-sm"
+                          : "border-border bg-card text-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      <div className="text-xs font-bold truncate">{v.flavor}</div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">{v.size} — ₹{v.price}</div>
+                    </button>
+                  ))}
                 </div>
+              </div>
 
-                {/* 7. Delivery Schedule Slots */}
-                <div className="space-y-4 border-t border-pink-50 pt-6">
-                  <h4 className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
-                    <Calendar className="h-4 w-4 text-pink-500" /> Choose Delivery Date & Slot
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="delivery-date-input" className="text-xs text-gray-500">Date</Label>
-                      <Input
-                        id="delivery-date-input"
-                        type="date"
-                        min={new Date().toISOString().split("T")[0]}
-                        value={deliveryDate}
-                        onChange={(e) => setDeliveryDate(e.target.value)}
-                        className="bg-pink-50/20 border-pink-100 focus-visible:ring-pink-500 rounded-xl"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="delivery-slot" className="text-xs text-gray-500">Available Time Slot</Label>
-                      <select
-                        id="delivery-slot"
-                        value={deliveryTimeSlot}
-                        onChange={(e) => setDeliveryTimeSlot(e.target.value)}
-                        className="w-full text-xs font-semibold bg-pink-50/20 border border-pink-100 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-pink-400 text-gray-700"
-                      >
-                        <option value="Morning (9 AM - 12 PM)">Morning (9 AM - 12 PM)</option>
-                        <option value="Afternoon (12 PM - 4 PM)">Afternoon (12 PM - 4 PM)</option>
-                        <option value="Evening (4 PM - 8 PM)">Evening (4 PM - 8 PM)</option>
-                        <option value="Midnight Special (11:30 PM - 12:00 AM) (+ $5.00)">Midnight Special (11:30 PM - 12:00 AM) (+ $5.00)</option>
-                      </select>
-                    </div>
+              {/* 2. Egg/Eggless Selector */}
+              {cake.egglessAvailable && (
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-secondary border border-border">
+                  <div className="text-left">
+                    <div className="text-xs font-extrabold text-foreground">Make it 100% Eggless</div>
+                    <div className="text-[10px] text-muted-foreground">Fluffy egg-substitute (Add ₹{cake.egglessPremium || 50})</div>
                   </div>
+                  <input
+                    type="checkbox"
+                    checked={isEggless}
+                    onChange={(e) => setIsEggless(e.target.checked)}
+                    className="w-4.5 h-4.5 rounded border-border text-primary focus:ring-primary accent-primary cursor-pointer"
+                  />
                 </div>
+              )}
 
+              {/* 3. Message on Cake */}
+              <div className="space-y-2 pt-2">
+                <Label className="text-xs font-extrabold uppercase tracking-wide text-foreground">Message on Cake (Max 25 chars)</Label>
+                <Input
+                  maxLength={25}
+                  value={cakeMessage}
+                  onChange={(e) => setCakeMessage(e.target.value)}
+                  placeholder="e.g. Happy Birthday John"
+                  className="bg-card border-border"
+                />
+              </div>
+
+              {/* 4. Scheduling Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="space-y-2 text-left">
+                  <Label htmlFor="delivery-date-input" className="text-xs font-extrabold uppercase tracking-wide text-foreground">Delivery Date *</Label>
+                  <Input
+                    id="delivery-date-input"
+                    type="date"
+                    min={new Date().toISOString().split("T")[0]}
+                    value={deliveryDate}
+                    onChange={(e) => setDeliveryDate(e.target.value)}
+                    className="bg-card border-border text-xs"
+                  />
+                </div>
+                <div className="space-y-2 text-left">
+                  <Label className="text-xs font-extrabold uppercase tracking-wide text-foreground">Delivery Slot *</Label>
+                  <select
+                    value={deliveryTimeSlot}
+                    onChange={(e) => setDeliveryTimeSlot(e.target.value)}
+                    className="w-full text-xs font-semibold bg-card border border-border rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                  >
+                    <option>Morning (9 AM - 12 PM)</option>
+                    <option>Afternoon (12 PM - 4 PM)</option>
+                    <option>Evening (4 PM - 8 PM)</option>
+                    <option>Night Delivery (8 PM - 11 PM) (+ ₹150)</option>
+                  </select>
+                </div>
               </div>
 
             </div>
 
-            {/* Purchase CTA */}
-            <div className="pt-8 border-t border-pink-50 mt-8 flex flex-col sm:flex-row gap-4 items-center">
-              <Button
-                onClick={handleAddToCart}
-                className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-6 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-pink-100 text-base"
+            {/* Actions */}
+            <div className="pt-6 grid grid-cols-2 gap-4">
+              <Button 
+                onClick={handleAddToCart} 
+                variant="outline"
+                className="w-full border-primary hover:bg-primary/5 text-primary font-bold rounded-xl h-12 shadow-sm"
               >
-                <ShoppingBag className="h-5 w-5" /> Customize & Add to Cart
+                Add to Cart
+              </Button>
+              <Button 
+                onClick={handleBuyNow} 
+                className="w-full bg-primary hover:bg-primary/95 text-white font-bold rounded-xl h-12 shadow-lg shadow-primary/20"
+              >
+                Buy Now
               </Button>
             </div>
 
           </div>
-
         </div>
 
-        {/* Related Cakes Grid */}
+        {/* Related Products Slider */}
         {relatedCakes.length > 0 && (
-          <section className="mt-20 space-y-8">
-            <div className="text-left space-y-2">
-              <h3 className="text-2xl font-extrabold text-gray-900">You May Also Like</h3>
-              <p className="text-xs text-gray-450 font-semibold">Matching options for your special event.</p>
+          <div className="pt-16 space-y-6">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <h3 className="text-xl font-extrabold text-foreground">You May Also Like</h3>
             </div>
-            
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {relatedCakes.map((c) => (
-                <div key={c.id} className="bg-white p-2 rounded-3xl shadow-sm border border-pink-50">
-                  <Link to={`/cake/${c.id}`}>
-                    <div className="aspect-square overflow-hidden rounded-2xl bg-pink-50/20 mb-3">
-                      <img src={c.image} alt={c.name} className="h-full w-full object-cover hover:scale-105 transition-transform duration-300" />
-                    </div>
-                  </Link>
-                  <div className="p-3 text-left space-y-1">
-                    <Link to={`/cake/${c.id}`}>
-                      <h4 className="font-bold text-gray-800 text-sm line-clamp-1 hover:text-pink-500 transition-colors">{c.name}</h4>
-                    </Link>
-                    <div className="text-xs text-pink-500 font-extrabold">${c.basePrice.toFixed(2)}</div>
-                  </div>
-                </div>
+                <ProductCard key={c.id} cake={c} />
               ))}
             </div>
-          </section>
+          </div>
         )}
 
+        {/* Recently Viewed Slider */}
+        {recentlyViewed.length > 0 && (
+          <div className="pt-16 space-y-6 border-t border-border mt-16 pb-16">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              <h3 className="text-xl font-extrabold text-foreground">Recently Viewed Cakes</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {recentlyViewed.map((c) => (
+                <ProductCard key={c.id} cake={c} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ==================================================== */}
+        {/* REVIEWS & COMMENTS SECTION */}
+        {/* ==================================================== */}
+        <div className="pt-16 border-t border-border space-y-12 text-left">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-6">
+            <div>
+              <h3 className="text-2xl font-extrabold text-foreground flex items-center gap-2">
+                <Star className="h-6 w-6 text-amber-500 fill-current" /> Customer Feedback & Reviews
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">Read reviews left by verified purchasers of this cake.</p>
+            </div>
+            <a 
+              href="#review-form-section" 
+              className="inline-flex items-center justify-center rounded-xl bg-secondary hover:bg-secondary/80 text-primary px-4 py-2.5 text-xs font-bold transition duration-250"
+            >
+              Write a Review
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            {/* Left Column: Stats & Breakdown */}
+            <div className="space-y-6">
+              <div className="bg-secondary/20 rounded-3xl p-6 border border-border/60 text-center space-y-4">
+                <h4 className="text-sm font-extrabold uppercase tracking-wider text-muted-foreground">Average Rating</h4>
+                <div className="text-5xl font-black text-foreground">{(cake?.rating || 0).toFixed(1)}</div>
+                
+                <div className="flex justify-center text-amber-500 gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star 
+                      key={i} 
+                      className={`h-5 w-5 ${i < Math.floor(cake?.rating || 0) ? "fill-current" : "text-muted"}`} 
+                    />
+                  ))}
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Based on {reviews.length} total rating{reviews.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+
+              {/* Star Progress Bars */}
+              <div className="space-y-3">
+                {[5, 4, 3, 2, 1].map((stars) => {
+                  const count = breakdown[stars] || 0;
+                  const percentage = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+
+                  return (
+                    <div key={stars} className="flex items-center gap-3 text-xs font-medium">
+                      <span className="w-12 text-foreground font-semibold flex items-center gap-1 justify-end">
+                        {stars} <Star className="h-3.5 w-3.5 text-amber-500 fill-current" />
+                      </span>
+                      <div className="flex-1 bg-secondary rounded-full h-2.5 overflow-hidden">
+                        <div 
+                          className="bg-amber-500 h-full rounded-full transition-all duration-500" 
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                      <span className="w-8 text-muted-foreground text-left font-bold">
+                        {count}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right Column: Review List & Submission Form */}
+            <div className="lg:col-span-2 space-y-10">
+              
+              {/* Review List */}
+              <div className="space-y-6">
+                <h4 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                  Latest Comments ({reviews.length})
+                </h4>
+
+                {reviewsLoading && reviews.length === 0 ? (
+                  <div className="space-y-4">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="animate-pulse bg-secondary/30 rounded-2xl p-5 border border-border space-y-3">
+                        <div className="h-4 w-1/4 bg-border rounded" />
+                        <div className="h-3 w-3/4 bg-border rounded" />
+                      </div>
+                    ))}
+                  </div>
+                ) : reviews.length === 0 ? (
+                  <div className="border border-dashed border-border rounded-3xl p-8 text-center bg-card text-muted-foreground">
+                    <Star className="h-10 w-10 text-muted/40 mx-auto mb-2" />
+                    <p className="text-sm font-bold">No reviews submitted yet</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Be the first to share your experience with this custom cake flavor!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                    {reviews.map((review) => {
+                      const isOwnReview = user?._id === review.user?._id;
+                      
+                      return (
+                        <div key={review._id} className="bg-card border border-border p-5 rounded-2xl space-y-3 relative hover:shadow-sm transition-shadow text-left">
+                          
+                          {/* User Header */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                              <div className="h-9 w-9 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center border border-primary/20 overflow-hidden flex-shrink-0">
+                                {review.user?.profileImage ? (
+                                  <img 
+                                    src={review.user.profileImage.startsWith("http") ? review.user.profileImage : `http://localhost:5000${review.user.profileImage}`} 
+                                    alt={review.user?.name} 
+                                    className="h-full w-full object-cover" 
+                                  />
+                                ) : (
+                                  review.user?.name ? review.user.name[0].toUpperCase() : "?"
+                                )}
+                              </div>
+                              <div>
+                                <h5 className="font-bold text-foreground text-xs">{review.user?.name || "Verified Customer"}</h5>
+                                <p className="text-[10px] text-muted-foreground">
+                                  {new Date(review.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Stars rating */}
+                            <div className="flex text-amber-500 gap-0.5">
+                              {[...Array(5)].map((_, i) => (
+                                <Star 
+                                  key={i} 
+                                  className={`h-3 w-3 ${i < review.rating ? "fill-current" : "text-muted"}`} 
+                                />
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Comment details */}
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {review.comment}
+                          </p>
+
+                          {/* Edit / Delete Buttons if owner */}
+                          {isOwnReview && (
+                            <div className="flex items-center justify-end gap-3 pt-1 border-t border-border/50">
+                              <button 
+                                onClick={() => handleEditInit(review)}
+                                className="text-[10px] font-bold text-primary hover:text-primary/80 flex items-center gap-1 cursor-pointer"
+                              >
+                                <Edit2 className="h-3 w-3" /> Edit
+                              </button>
+                              <button 
+                                onClick={() => handleReviewDelete(review._id)}
+                                className="text-[10px] font-bold text-destructive hover:text-destructive/80 flex items-center gap-1 cursor-pointer"
+                              >
+                                <Trash className="h-3 w-3" /> Delete
+                              </button>
+                            </div>
+                          )}
+
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Review Submit Form */}
+              <div id="review-form-section" className="bg-secondary/10 border border-border p-6 rounded-3xl space-y-4">
+                <div>
+                  <h4 className="text-base font-extrabold text-foreground">
+                    {editingReviewId ? "Edit Your Review" : "Write a Review"}
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">Share your feedback about this custom cake to help other dessert lovers.</p>
+                </div>
+
+                <form onSubmit={handleReviewSubmit} className="space-y-4">
+                  {/* Interactive Star Picker */}
+                  <div className="space-y-1.5 text-left">
+                    <Label className="text-xs font-bold text-foreground">Your Rating</Label>
+                    <div className="flex gap-1.5">
+                      {[1, 2, 3, 4, 5].map((stars) => (
+                        <button
+                          key={stars}
+                          type="button"
+                          onClick={() => setNewRating(stars)}
+                          className="focus:outline-none hover:scale-110 transition-transform cursor-pointer"
+                        >
+                          <Star 
+                            className={`h-7 w-7 transition-colors ${
+                              stars <= newRating ? "text-amber-500 fill-current" : "text-muted hover:text-amber-400"
+                            }`} 
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Comment Textarea */}
+                  <div className="space-y-1.5 text-left">
+                    <Label htmlFor="review-comment-input" className="text-xs font-bold text-foreground font-semibold">Your Review Details</Label>
+                    <textarea
+                      id="review-comment-input"
+                      rows={4}
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="What did you think of the flavor, texture, decorations, and delivery?"
+                      className="w-full bg-card border border-border focus:ring-1 focus:ring-primary focus:outline-none rounded-xl p-3 text-xs leading-relaxed"
+                      required
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="flex gap-2">
+                    {editingReviewId && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingReviewId(null);
+                          setNewComment("");
+                          setNewRating(5);
+                        }}
+                        className="rounded-xl font-bold h-10 border-border text-xs"
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                    <Button
+                      type="submit"
+                      disabled={submittingReview}
+                      className="bg-primary hover:bg-primary/95 font-bold h-10 px-6 text-xs rounded-xl"
+                    >
+                      {submittingReview ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      ) : editingReviewId ? (
+                        "Update Review"
+                      ) : (
+                        "Submit Review"
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
       </div>
+
+      {/* Premium Image Zoom Modal */}
+      {isZoomOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <button 
+            onClick={() => setIsZoomOpen(false)}
+            className="absolute top-6 right-6 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition duration-200"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <div className="max-w-4xl max-h-[90vh] p-4">
+            <img 
+              src={activeImage} 
+              alt={cake.name} 
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl scale-in"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

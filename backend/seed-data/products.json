@@ -1,0 +1,776 @@
+[
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234801" },
+    "slug": "ariston-signature",
+    "name": "Ariston Premium Signature Cake",
+    "description": "Our crowning achievement. Layers of delicate gold-dusted chocolate ganache, infused with hazelnut praline and premium Madagascar vanilla cream.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234506" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234503" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234501" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234602" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234601" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234701" }
+    ],
+    "basePrice": 59.99,
+    "discount": 10,
+    "thumbnail": "/images/cakes/ariston-signature.jpg",
+    "gallery": [
+      "/images/cakes/ariston-signature.jpg"
+    ],
+    "isBestSeller": true,
+    "isTodaySpecial": true,
+    "isFeatured": true,
+    "isTrending": true,
+    "isNewArrival": true,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Hazelnut Chocolate Praline", "size": "1 kg", "price": 59.99, "stock": 8 },
+      { "flavor": "Hazelnut Chocolate Praline", "size": "2 kg", "price": 109.99, "stock": 5 },
+      { "flavor": "Madagascar Vanilla Bean", "size": "1 kg", "price": 54.99, "stock": 12 }
+    ],
+    "rating": 4.9,
+    "reviewsCount": 142,
+    "isSameDayDelivery": true,
+    "deliveryTimeInfo": "Delivered within 4 hours",
+    "seo": {
+      "title": "Ariston Premium Signature Cake - Luxury Chocolate Cake",
+      "description": "Order the Ariston Premium Signature Cake with gold-dusted chocolate ganache and hazelnut praline. Perfect for anniversaries and birthdays.",
+      "keywords": ["luxury cake", "signature cake", "chocolate ganache", "hazelnut praline"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234802" },
+    "slug": "chocolate-truffle-delight",
+    "name": "Luxury Chocolate Truffle Delight",
+    "description": "Indulgent and rich dark chocolate cake layered with silky chocolate truffle ganache and topped with hand-rolled dark chocolate truffles.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234506" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234503" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234602" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234701" }
+    ],
+    "basePrice": 48.00,
+    "discount": 15,
+    "thumbnail": "/images/cakes/chocolate-truffle-delight.png",
+    "gallery": [
+      "/images/cakes/chocolate-truffle-delight.png"
+    ],
+    "isBestSeller": true,
+    "isTodaySpecial": false,
+    "isFeatured": true,
+    "isTrending": true,
+    "isNewArrival": false,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Classic Dark Chocolate", "size": "0.5 kg", "price": 28.0, "stock": 15 },
+      { "flavor": "Classic Dark Chocolate", "size": "1 kg", "price": 48.0, "stock": 20 },
+      { "flavor": "Dark Chocolate & Salted Caramel", "size": "1 kg", "price": 52.0, "stock": 10 }
+    ],
+    "rating": 4.8,
+    "reviewsCount": 98,
+    "isSameDayDelivery": true,
+    "deliveryTimeInfo": "Delivered within 4 hours",
+    "seo": {
+      "title": "Luxury Chocolate Truffle Delight Cake - Premium Chocolate",
+      "description": "Indulge in our Luxury Chocolate Truffle Delight Cake. Layered with rich dark chocolate truffle ganache. Same day delivery available.",
+      "keywords": ["chocolate truffle", "truffle cake", "dark chocolate", "anniversary cake"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234803" },
+    "slug": "black-forest",
+    "name": "Traditional Black Forest Gateau",
+    "description": "Classic German Black Forest with fluffy chocolate sponge layers, whipped cream frosting, cherry compote, and premium chocolate shavings.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234501" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234506" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234601" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234701" }
+    ],
+    "basePrice": 34.99,
+    "discount": 0,
+    "thumbnail": "/images/cakes/black-forest.jpg",
+    "gallery": [
+      "/images/cakes/black-forest.jpg"
+    ],
+    "isBestSeller": false,
+    "isTodaySpecial": false,
+    "isFeatured": false,
+    "isTrending": false,
+    "isNewArrival": false,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Classic Cherry & Chocolate", "size": "0.5 kg", "price": 22.99, "stock": 25 },
+      { "flavor": "Classic Cherry & Chocolate", "size": "1 kg", "price": 34.99, "stock": 30 }
+    ],
+    "rating": 4.7,
+    "reviewsCount": 215,
+    "isSameDayDelivery": true,
+    "deliveryTimeInfo": "Delivered within 3 hours",
+    "seo": {
+      "title": "Traditional Black Forest Gateau - Classic German Cake",
+      "description": "Enjoy the classic German Black Forest Gateau with fresh cherry compote and fluffy chocolate sponge. Best for birthdays.",
+      "keywords": ["black forest cake", "cherry chocolate", "german gateau", "birthday cake"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234804" },
+    "slug": "chocolate-fudge",
+    "name": "Double Chocolate Fudge Overload",
+    "description": "Moist chocolate sponge smothered in velvety hot fudge frosting. The ultimate cake for serious chocolate lovers.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234501" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234505" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234601" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234604" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234703" }
+    ],
+    "basePrice": 39.99,
+    "discount": 5,
+    "thumbnail": "/images/cakes/chocolate-fudge.jpg",
+    "gallery": [
+      "/images/cakes/chocolate-fudge.jpg"
+    ],
+    "isBestSeller": true,
+    "isTodaySpecial": false,
+    "isFeatured": false,
+    "isTrending": true,
+    "isNewArrival": true,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Double Chocolate Fudge", "size": "0.5 kg", "price": 25.99, "stock": 18 },
+      { "flavor": "Double Chocolate Fudge", "size": "1 kg", "price": 39.99, "stock": 22 },
+      { "flavor": "Chocolate Fudge Mint", "size": "1 kg", "price": 42.99, "stock": 8 }
+    ],
+    "rating": 4.9,
+    "reviewsCount": 184,
+    "isSameDayDelivery": true,
+    "deliveryTimeInfo": "Delivered within 4 hours",
+    "seo": {
+      "title": "Double Chocolate Fudge Overload Cake - Rich Fudge Sponge",
+      "description": "Order the ultimate Double Chocolate Fudge Overload Cake. Smothered in velvety hot fudge frosting. Kids and birthday favorite.",
+      "keywords": ["chocolate fudge", "fudge overload", "hot fudge frosting", "chocolate cake"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234805" },
+    "slug": "custom-birthday",
+    "name": "Custom Confetti Birthday Special",
+    "description": "A celebration of colors! Soft vanilla sponge loaded with colorful sprinkles, layered with sweet buttercream and decorated with custom piping.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234501" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234505" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234504" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234601" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234604" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234702" }
+    ],
+    "basePrice": 42.50,
+    "discount": 10,
+    "thumbnail": "/images/cakes/custom-birthday.jpg",
+    "gallery": [
+      "/images/cakes/custom-birthday.jpg"
+    ],
+    "isBestSeller": true,
+    "isTodaySpecial": true,
+    "isFeatured": true,
+    "isTrending": false,
+    "isNewArrival": true,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Classic Vanilla Buttercream", "size": "1 kg", "price": 42.5, "stock": 12 },
+      { "flavor": "Funfetti Strawberry", "size": "1 kg", "price": 45.0, "stock": 14 }
+    ],
+    "rating": 4.8,
+    "reviewsCount": 310,
+    "isSameDayDelivery": true,
+    "deliveryTimeInfo": "Delivered within 5 hours",
+    "seo": {
+      "title": "Custom Confetti Birthday Special Cake - Sprinkles & Buttercream",
+      "description": "Celebrate with our colorful Custom Confetti Birthday Special Cake. Buttercream piping, vanilla sponge, and fun sprinkles.",
+      "keywords": ["confetti cake", "custom birthday cake", "sprinkle cake", "photo cake"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234806" },
+    "slug": "fruity-delight",
+    "name": "Fresh Tropical Fruit Medley",
+    "description": "Light chiffon cake filled with fresh kiwi, pineapple, and strawberries, frosted with organic low-fat whipped cream.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234501" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234503" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234601" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234602" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234703" }
+    ],
+    "basePrice": 38.00,
+    "discount": 8,
+    "thumbnail": "/images/cakes/fruity-delight.jpg",
+    "gallery": [
+      "/images/cakes/fruity-delight.jpg"
+    ],
+    "isBestSeller": false,
+    "isTodaySpecial": false,
+    "isFeatured": false,
+    "isTrending": false,
+    "isNewArrival": false,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Tropical Fresh Fruit", "size": "0.5 kg", "price": 24.0, "stock": 10 },
+      { "flavor": "Tropical Fresh Fruit", "size": "1 kg", "price": 38.0, "stock": 15 }
+    ],
+    "rating": 4.6,
+    "reviewsCount": 88,
+    "isSameDayDelivery": true,
+    "deliveryTimeInfo": "Delivered within 3 hours",
+    "seo": {
+      "title": "Fresh Tropical Fruit Medley Cake - Light Chiffon",
+      "description": "Fresh fruit cake with kiwi, pineapple, strawberries, and low-fat whipped cream. Perfect choice for light and healthy celebrations.",
+      "keywords": ["fruit cake", "tropical fruit medley", "chiffon cake", "healthy cake"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234807" },
+    "slug": "fruity-berry",
+    "name": "Summer Berry Chantilly Cream",
+    "description": "Fluffy sponge cake loaded with fresh raspberries, blueberries, and blackberries, layered with premium French Chantilly cream.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234505" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234501" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234604" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234601" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234703" }
+    ],
+    "basePrice": 44.99,
+    "discount": 12,
+    "thumbnail": "/images/cakes/fruity-berry.jpg",
+    "gallery": [
+      "/images/cakes/fruity-berry.jpg"
+    ],
+    "isBestSeller": false,
+    "isTodaySpecial": false,
+    "isFeatured": false,
+    "isTrending": true,
+    "isNewArrival": true,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Berry Chantilly", "size": "1 kg", "price": 44.99, "stock": 12 }
+    ],
+    "rating": 4.9,
+    "reviewsCount": 76,
+    "isSameDayDelivery": true,
+    "deliveryTimeInfo": "Delivered within 4 hours",
+    "seo": {
+      "title": "Summer Berry Chantilly Cream Cake - Premium Fresh Berries",
+      "description": "Enjoy the taste of summer with fresh raspberries, blueberries, blackberries, and French Chantilly cream. Perfect for birthday parties.",
+      "keywords": ["berry cake", "chantilly cream", "summer berries", "sponge cake"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234808" },
+    "slug": "fruity-mango",
+    "name": "Alphonso Mango Dream Cake",
+    "description": "Seasonal specialty featuring layers of luscious fresh Alphonso mango cream, pure mango pulp compote, and pillowy vanilla sponge cake.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234501" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234505" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234601" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234604" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234703" }
+    ],
+    "basePrice": 37.50,
+    "discount": 0,
+    "thumbnail": "/images/cakes/fruity-mango.jpg",
+    "gallery": [
+      "/images/cakes/fruity-mango.jpg"
+    ],
+    "isBestSeller": false,
+    "isTodaySpecial": true,
+    "isFeatured": true,
+    "isTrending": true,
+    "isNewArrival": true,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Alphonso Mango Cream", "size": "0.5 kg", "price": 23.5, "stock": 20 },
+      { "flavor": "Alphonso Mango Cream", "size": "1 kg", "price": 37.5, "stock": 25 }
+    ],
+    "rating": 4.8,
+    "reviewsCount": 120,
+    "isSameDayDelivery": true,
+    "deliveryTimeInfo": "Delivered within 4 hours",
+    "seo": {
+      "title": "Alphonso Mango Dream Cake - Fresh Mango Special",
+      "description": "Satisfy your cravings with Alphonso Mango Dream Cake. Soft vanilla sponge layered with fresh mango compote. Seasonal special.",
+      "keywords": ["mango cake", "alphonso mango", "mango dream", "seasonal cake"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234809" },
+    "slug": "fruity-passion",
+    "name": "Passionfruit & White Chocolate Mousse",
+    "description": "Exquisite combination of tangy passionfruit glaze, rich Belgian white chocolate mousse, and almond dacquoise base.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234506" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234503" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234602" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234701" }
+    ],
+    "basePrice": 52.00,
+    "discount": 15,
+    "thumbnail": "/images/cakes/fruity-passion.jpg",
+    "gallery": [
+      "/images/cakes/fruity-passion.jpg"
+    ],
+    "isBestSeller": false,
+    "isTodaySpecial": false,
+    "isFeatured": true,
+    "isTrending": false,
+    "isNewArrival": false,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "White Chocolate Passionfruit", "size": "1 kg", "price": 52.0, "stock": 10 }
+    ],
+    "rating": 4.7,
+    "reviewsCount": 65,
+    "isSameDayDelivery": true,
+    "deliveryTimeInfo": "Delivered within 5 hours",
+    "seo": {
+      "title": "Passionfruit & White Chocolate Mousse Cake - Dacquoise Base",
+      "description": "Tangy passionfruit glaze meets Belgian white chocolate mousse on an almond dacquoise base. A premium gourmet masterpiece.",
+      "keywords": ["passionfruit mousse", "white chocolate mousse", "dacquoise cake", "gourmet dessert"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234810" },
+    "slug": "lemon-strawberry",
+    "name": "Lemon Zest Strawberry Bliss",
+    "description": "Zesty lemon sponge cake filled with home-cooked sweet strawberry jam and iced with lemon-scented cream cheese frosting.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234501" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234601" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234703" }
+    ],
+    "basePrice": 35.00,
+    "discount": 0,
+    "thumbnail": "/images/cakes/lemon-strawberry.jpg",
+    "gallery": [
+      "/images/cakes/lemon-strawberry.jpg"
+    ],
+    "isBestSeller": false,
+    "isTodaySpecial": false,
+    "isFeatured": false,
+    "isTrending": false,
+    "isNewArrival": false,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Lemon Strawberry Cream", "size": "1 kg", "price": 35.0, "stock": 15 }
+    ],
+    "rating": 4.5,
+    "reviewsCount": 112,
+    "isSameDayDelivery": true,
+    "deliveryTimeInfo": "Delivered within 3 hours",
+    "seo": {
+      "title": "Lemon Zest Strawberry Bliss Cake - Lemon Cream Cheese",
+      "description": "Order our zesty Lemon Sponge Cake filled with sweet strawberry jam and frosted with delicious lemon cream cheese.",
+      "keywords": ["lemon cake", "strawberry bliss", "cream cheese frosting", "lemon sponge"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234811" },
+    "slug": "red-velvet",
+    "name": "Royal Red Velvet Passion",
+    "description": "Authentic deep-red velvet sponge layers with a touch of premium cocoa, frosted with our signature smooth whipped cream cheese frosting.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234503" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234502" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234506" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234602" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234603" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234701" }
+    ],
+    "basePrice": 45.00,
+    "discount": 10,
+    "thumbnail": "/images/cakes/red-velvet.jpg",
+    "gallery": [
+      "/images/cakes/red-velvet.jpg"
+    ],
+    "isBestSeller": true,
+    "isTodaySpecial": false,
+    "isFeatured": true,
+    "isTrending": true,
+    "isNewArrival": false,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Royal Red Velvet", "size": "0.5 kg", "price": 29.0, "stock": 30 },
+      { "flavor": "Royal Red Velvet", "size": "1 kg", "price": 45.0, "stock": 35 },
+      { "flavor": "Royal Red Velvet", "size": "2 kg", "price": 85.0, "stock": 10 }
+    ],
+    "rating": 4.9,
+    "reviewsCount": 280,
+    "isSameDayDelivery": true,
+    "deliveryTimeInfo": "Delivered within 4 hours",
+    "seo": {
+      "title": "Royal Red Velvet Passion Cake - Cream Cheese Frosting",
+      "description": "Deep-red velvet sponge layers frosted with premium whipped cream cheese frosting. Ideal for weddings and anniversaries.",
+      "keywords": ["red velvet cake", "cream cheese", "wedding cake", "anniversary cake"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234812" },
+    "slug": "strawberry-bliss",
+    "name": "Classic Strawberry Shortcake",
+    "description": "Double layers of vanilla sponge stuffed with fresh glazed strawberry slices and light, fluffy fresh vanilla cream frosting.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234501" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234505" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234601" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234604" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234703" }
+    ],
+    "basePrice": 33.99,
+    "discount": 0,
+    "thumbnail": "/images/cakes/strawberry-bliss.jpg",
+    "gallery": [
+      "/images/cakes/strawberry-bliss.jpg"
+    ],
+    "isBestSeller": false,
+    "isTodaySpecial": false,
+    "isFeatured": false,
+    "isTrending": false,
+    "isNewArrival": false,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Strawberry Cream", "size": "0.5 kg", "price": 21.99, "stock": 14 },
+      { "flavor": "Strawberry Cream", "size": "1 kg", "price": 33.99, "stock": 18 }
+    ],
+    "rating": 4.6,
+    "reviewsCount": 95,
+    "isSameDayDelivery": true,
+    "deliveryTimeInfo": "Delivered within 3 hours",
+    "seo": {
+      "title": "Classic Strawberry Shortcake - Fresh Strawberries",
+      "description": "Two layers of soft vanilla sponge packed with fresh glazed strawberry slices and light vanilla cream. Perfect for birthdays.",
+      "keywords": ["strawberry shortcake", "fresh strawberry cake", "vanilla cream", "birthday cake"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234813" },
+    "slug": "vanilla-bean",
+    "name": "Gourmet Vanilla Bean Dream",
+    "description": "Decadent vanilla cake featuring real Madagascar vanilla bean caviar flecks inside soft butter sponge and rich buttercream frosting.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234501" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234506" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234601" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234701" }
+    ],
+    "basePrice": 36.00,
+    "discount": 5,
+    "thumbnail": "/images/cakes/vanilla-bean.jpg",
+    "gallery": [
+      "/images/cakes/vanilla-bean.jpg"
+    ],
+    "isBestSeller": false,
+    "isTodaySpecial": false,
+    "isFeatured": false,
+    "isTrending": false,
+    "isNewArrival": false,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Madagascar Vanilla Bean", "size": "1 kg", "price": 36.0, "stock": 20 }
+    ],
+    "rating": 4.7,
+    "reviewsCount": 78,
+    "isSameDayDelivery": true,
+    "deliveryTimeInfo": "Delivered within 3 hours",
+    "seo": {
+      "title": "Gourmet Vanilla Bean Dream Cake - Madagascar Vanilla",
+      "description": "Made with genuine Madagascar vanilla bean caviar flecks and frosted with rich buttercream. Classic flavor, gourmet quality.",
+      "keywords": ["vanilla bean cake", "madagascar vanilla", "buttercream frosting", "gourmet vanilla"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234814" },
+    "slug": "wedding-classic",
+    "name": "Classic Tiered Lace Wedding Cake",
+    "description": "An elegant, multi-tiered masterpiece with custom fondant lace details, stuffed with classic rich fruitcake or chocolate layers of your choice.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234502" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234603" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234703" }
+    ],
+    "basePrice": 199.00,
+    "discount": 0,
+    "thumbnail": "/images/cakes/wedding-classic.jpg",
+    "gallery": [
+      "/images/cakes/wedding-classic.jpg"
+    ],
+    "isBestSeller": true,
+    "isTodaySpecial": false,
+    "isFeatured": true,
+    "isTrending": false,
+    "isNewArrival": true,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Traditional Rich Fruitcake", "size": "3 kg", "price": 199.0, "stock": 3 },
+      { "flavor": "Belgian Chocolate Truffle", "size": "3 kg", "price": 220.0, "stock": 5 },
+      { "flavor": "Classic Vanilla Praline", "size": "3 kg", "price": 210.0, "stock": 4 }
+    ],
+    "rating": 5.0,
+    "reviewsCount": 42,
+    "isSameDayDelivery": false,
+    "deliveryTimeInfo": "Delivered within 24 hours (requires prep)",
+    "seo": {
+      "title": "Classic Tiered Lace Wedding Cake - Elegant Fondant",
+      "description": "Custom multi-tiered wedding cake with delicate fondant lace. Available in rich fruitcake, Belgian chocolate truffle, or vanilla praline.",
+      "keywords": ["wedding cake", "tiered wedding cake", "lace wedding cake", "fondant cake"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234815" },
+    "slug": "wedding-elegance",
+    "name": "Elegant Pearl Cascading Cake",
+    "description": "A three-tier luxury cake decorated with edible sugar pearls and a cascade of beautiful handcrafted white sugar roses.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234502" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234506" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234603" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234701" }
+    ],
+    "basePrice": 249.99,
+    "discount": 5,
+    "thumbnail": "/images/cakes/wedding-elegance.jpg",
+    "gallery": [
+      "/images/cakes/wedding-elegance.jpg"
+    ],
+    "isBestSeller": false,
+    "isTodaySpecial": false,
+    "isFeatured": true,
+    "isTrending": false,
+    "isNewArrival": false,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Champagne Vanilla Bean", "size": "3 kg", "price": 249.99, "stock": 2 },
+      { "flavor": "Salted Caramel Velvet", "size": "3 kg", "price": 269.99, "stock": 2 }
+    ],
+    "rating": 4.9,
+    "reviewsCount": 36,
+    "isSameDayDelivery": false,
+    "deliveryTimeInfo": "Delivered within 24 hours (requires prep)",
+    "seo": {
+      "title": "Elegant Pearl Cascading Wedding Cake - Three Tier Luxury",
+      "description": "Stunning three-tier luxury wedding cake with sugar pearls and handcrafted sugar roses. Choose from Champagne Vanilla or Salted Caramel.",
+      "keywords": ["pearl wedding cake", "sugar roses", "luxury wedding cake", "three tier cake"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234816" },
+    "slug": "wedding-garden",
+    "name": "Secret Garden Floral Tier",
+    "description": "Whimsical rustic wedding cake dressed in textured buttercream frosting and decorated with fresh, organic, seasonal colorful flowers.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234502" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234603" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234703" }
+    ],
+    "basePrice": 180.00,
+    "discount": 0,
+    "thumbnail": "/images/cakes/wedding-garden.jpg",
+    "gallery": [
+      "/images/cakes/wedding-garden.jpg"
+    ],
+    "isBestSeller": false,
+    "isTodaySpecial": false,
+    "isFeatured": false,
+    "isTrending": false,
+    "isNewArrival": false,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Lemon Elderflower", "size": "3 kg", "price": 180.0, "stock": 3 },
+      { "flavor": "White Chocolate Raspberry", "size": "3 kg", "price": 195.0, "stock": 4 }
+    ],
+    "rating": 4.8,
+    "reviewsCount": 29,
+    "isSameDayDelivery": false,
+    "deliveryTimeInfo": "Delivered within 24 hours (requires prep)",
+    "seo": {
+      "title": "Secret Garden Floral Tier Wedding Cake - Rustic Buttercream",
+      "description": "Whimsical rustic wedding cake with textured buttercream and colorful fresh flowers. Choice of lemon elderflower or raspberry.",
+      "keywords": ["floral wedding cake", "rustic wedding cake", "buttercream cake", "secret garden"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234817" },
+    "slug": "wedding-season",
+    "name": "Luxury Gold Leaf Ivory Cake",
+    "description": "Opulent wedding cake covered in smooth ivory fondant, detailed with delicate flakes of 24k edible gold leaf and white orchids.",
+    "categories": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234502" },
+      { "$oid": "64b0f1a9d8a3f8c8b1234506" }
+    ],
+    "occasions": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234603" }
+    ],
+    "cakeTypes": [
+      { "$oid": "64b0f1a9d8a3f8c8b1234701" }
+    ],
+    "basePrice": 280.00,
+    "discount": 10,
+    "thumbnail": "/images/cakes/wedding-season.jpg",
+    "gallery": [
+      "/images/cakes/wedding-season.jpg"
+    ],
+    "isBestSeller": true,
+    "isTodaySpecial": true,
+    "isFeatured": true,
+    "isTrending": true,
+    "isNewArrival": true,
+    "egglessAvailable": true,
+    "egglessPremium": 1.5,
+    "variants": [
+      { "flavor": "Gold Leaf Chocolate Ganache", "size": "3 kg", "price": 280.0, "stock": 2 },
+      { "flavor": "Red Velvet Cream Cheese Premium", "size": "3 kg", "price": 295.0, "stock": 3 }
+    ],
+    "rating": 5.0,
+    "reviewsCount": 24,
+    "isSameDayDelivery": false,
+    "deliveryTimeInfo": "Delivered within 24 hours (requires prep)",
+    "seo": {
+      "title": "Luxury Gold Leaf Ivory Wedding Cake - 24k Edible Gold",
+      "description": "Opulent ivory fondant wedding cake detailed with 24k edible gold leaf and fresh orchids. Perfect for high-end luxury weddings.",
+      "keywords": ["gold leaf cake", "luxury wedding cake", "ivory fondant", "orchids wedding cake"]
+    },
+    "status": "active",
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  }
+]

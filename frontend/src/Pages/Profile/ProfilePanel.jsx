@@ -1,565 +1,374 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutUser, fetchAddresses } from "@/features/auth/authSlice";
+import { fetchUnreadCount } from "@/features/notifications/notificationSlice";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
-  User,
+  LayoutDashboard,
+  User as UserIcon,
   ShoppingBag,
+  Heart,
   MapPin,
+  Wallet,
   Bell,
+  Shield,
+  Fingerprint,
+  Settings as SettingsIcon,
   LogOut,
-  Camera,
-  Mail,
-  Phone,
+  Menu,
+  X,
   Sparkles,
-  Lock,
-  Trash2,
-  Clock
+  ShieldAlert,
+  Gift
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
+// Import modular dashboard components
+import DashboardOverview from "./components/DashboardOverview";
+import MyProfile from "./components/MyProfile";
+import OrderHistory from "./components/OrderHistory";
+import WishlistGrid from "./components/WishlistGrid";
+import AddressBook from "./components/AddressBook";
+import SecuritySettings from "./components/SecuritySettings";
+import PasskeyManager from "./components/PasskeyManager";
+import NotificationsCenter from "./components/NotificationsCenter";
+import DashboardSettings from "./components/DashboardSettings";
+
 export default function ProfilePanel() {
-  const { user, logout, updateProfile } = useAuth();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Active Tab: "profile" | "orders" | "addresses" | "settings"
-  const [activeTab, setActiveTab] = useState("profile");
+  const { user, loading } = useSelector((state) => state.auth);
+  const wishlistIds = useSelector((state) => state.wishlist.wishlistItems);
+  const cartItems = useSelector((state) => state.cart.cartItems);
 
-  // Profile Form State
-  const [profileForm, setProfileForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    address: "",
-    birthdate: "",
-    bio: ""
-  });
+  // Active Tab: dashboard | profile | orders | wishlist | addresses | wallet | notifications | security | passkeys | settings
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Settings / Password State
-  const [passwords, setPasswords] = useState({ current: "", newPass: "", confirm: "" });
-  const [notifications, setNotifications] = useState({
-    orderUpdates: true,
-    promotions: true,
-    newFlavors: false
-  });
-
-  // Saved Addresses State
-  const [addressList, setAddressList] = useState([]);
-  const [newAddr, setNewAddr] = useState({ label: "Home", street: "", city: "", state: "", zip: "" });
-
-  // Order List State
-  const [orders, setOrders] = useState([]);
-
+  // Sync addresses on mount
   useEffect(() => {
     if (user) {
-      setProfileForm({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phone: user.phone || "",
-        address: user.address || "",
-        birthdate: user.birthdate || "",
-        bio: user.bio || ""
-      });
-
-      // Load saved addresses or initialize with user's default address
-      const savedAddresses = JSON.parse(localStorage.getItem("cake_user_addresses") || "[]");
-      if (savedAddresses.length === 0 && user.address) {
-        const defaultAddr = {
-          id: "addr-default",
-          label: "Default Delivery",
-          street: user.address,
-          city: "New York",
-          state: "NY",
-          zip: "10001"
-        };
-        setAddressList([defaultAddr]);
-        localStorage.setItem("cake_user_addresses", JSON.stringify([defaultAddr]));
-      } else {
-        setAddressList(savedAddresses);
-      }
+      dispatch(fetchAddresses());
     }
-  }, [user]);
-
-  // Load orders on activeTab = "orders"
-  useEffect(() => {
-    const savedOrders = JSON.parse(localStorage.getItem("cake_user_orders") || "[]");
-    setOrders(savedOrders);
-  }, [activeTab]);
+  }, [dispatch]);
 
   if (!user) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center bg-[#FFF8F9] py-12 text-center">
-        <h2 className="text-xl font-bold text-gray-800">You must be logged in to view your profile</h2>
-        <Button asChild className="mt-4 bg-pink-500 hover:bg-pink-600 rounded-xl font-bold">
-          <Link to="/login">Go to Login</Link>
-        </Button>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center bg-background py-12 text-center transition-colors">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+        <h2 className="text-xl font-bold text-foreground">Loading your account details...</h2>
       </div>
     );
   }
 
-  const handleProfileSave = (e) => {
-    e.preventDefault();
-    updateProfile(profileForm);
-    toast.success("Profile saved successfully!");
-  };
-
-  const handlePasswordChange = (e) => {
-    e.preventDefault();
-    if (passwords.newPass !== passwords.confirm) {
-      toast.error("New passwords do not match.");
-      return;
-    }
-    toast.success("Password updated successfully!");
-    setPasswords({ current: "", newPass: "", confirm: "" });
-  };
-
-  const handleAddAddress = (e) => {
-    e.preventDefault();
-    if (!newAddr.street || !newAddr.zip) {
-      toast.error("Please fill in the street address.");
-      return;
-    }
-    const newRecord = {
-      id: `addr-${Date.now()}`,
-      ...newAddr
-    };
-    const updated = [...addressList, newRecord];
-    setAddressList(updated);
-    localStorage.setItem("cake_user_addresses", JSON.stringify(updated));
-    setNewAddr({ label: "Home", street: "", city: "", state: "", zip: "" });
-    toast.success("New address added!");
-  };
-
-  const handleDeleteAddress = (id) => {
-    const updated = addressList.filter((a) => a.id !== id);
-    setAddressList(updated);
-    localStorage.setItem("cake_user_addresses", JSON.stringify(updated));
-    toast.info("Address deleted.");
-  };
-
   const handleLogout = () => {
-    logout();
-    toast.info("Logged out successfully.");
+    dispatch(logoutUser());
     navigate("/");
+    toast.success("Logged out successfully.");
   };
+
+  // Navigation Items
+  const menuItems = [
+    { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { key: "profile", label: "My Profile", icon: UserIcon },
+    { key: "orders", label: "Orders", icon: ShoppingBag },
+    { key: "wishlist", label: "Wishlist", icon: Heart, badge: wishlistIds.length },
+    { key: "addresses", label: "Saved Addresses", icon: MapPin, badge: user.addresses?.length || 0 },
+    { key: "wallet", label: "Wallet (Soon)", icon: Wallet, disabled: true },
+    { key: "notifications", label: "Notifications", icon: Bell, badge: 1 }, // mockup unread count
+    { key: "security", label: "Security", icon: Shield },
+    { key: "passkeys", label: "Passkeys", icon: Fingerprint, badge: user.passkeys?.length || 0 },
+    { key: "settings", label: "Settings", icon: SettingsIcon },
+  ];
+
+  const getTabTitle = () => {
+    switch (activeTab) {
+      case "dashboard": return "Dashboard Overview";
+      case "profile": return "My Profile Details";
+      case "orders": return "Order History";
+      case "wishlist": return "My Saved Favorites";
+      case "addresses": return "Address Book Manager";
+      case "wallet": return "Bakery Wallet & Balance";
+      case "notifications": return "Notification Alerts";
+      case "security": return "Account Security Control";
+      case "passkeys": return "Biometric Security Keys";
+      case "settings": return "System Preferences Settings";
+      default: return "Account Dashboard";
+    }
+  };
+
+  const renderActiveContent = () => {
+    switch (activeTab) {
+      case "dashboard":
+        return <DashboardOverview user={user} wishlistCount={wishlistIds.length} onNavigateTab={setActiveTab} />;
+      case "profile":
+        return <MyProfile user={user} />;
+      case "orders":
+        return <OrderHistory />;
+      case "wishlist":
+        return <WishlistGrid wishlistedCakes={wishlistedCakes} />;
+      case "addresses":
+        return <AddressBook user={user} />;
+      case "security":
+        return <SecuritySettings user={user} />;
+      case "passkeys":
+        return <PasskeyManager user={user} />;
+      case "notifications":
+        return <NotificationsCenter user={user} />;
+      case "settings":
+        return <DashboardSettings user={user} />;
+      case "wallet":
+        return (
+          <div className="border border-dashed border-border rounded-3xl p-12 text-center space-y-4 bg-card">
+            <Wallet className="h-12 w-12 text-muted-foreground/40 mx-auto animate-bounce" />
+            <h3 className="font-extrabold text-foreground text-lg">Bakery Wallet is Coming Soon!</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+              In a future update, you'll be able to load credits, buy dessert gift cards, and track checkout balances directly.
+            </p>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Avatar path helper
+  const avatarUrl = user.profileImage 
+    ? (user.profileImage.startsWith("http") ? user.profileImage : `http://localhost:5000${user.profileImage}`)
+    : null;
 
   return (
-    <div className="bg-[#FFF8F9] min-h-screen py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Title */}
-        <div className="text-left space-y-2 mb-10">
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">My Account</h1>
-          <p className="text-sm text-gray-500">Manage your profile, active orders, and addresses.</p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+    <div className="bg-background min-h-screen py-6 sm:py-12 transition-colors duration-500">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start relative">
           
-          {/* Left Column: Profile navigation panel */}
-          <aside className="bg-white rounded-3xl border border-pink-50 shadow-sm p-6 space-y-6">
-            
-            {/* Header info */}
-            <div className="flex flex-col items-center text-center space-y-3 pb-6 border-b border-pink-50">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 text-white text-2xl font-bold flex items-center justify-center shadow-lg">
-                {user.firstName[0]}{user.lastName[0]}
+          {/* DESKTOP SIDEBAR (lg+) */}
+          <aside className="hidden lg:flex flex-col bg-card rounded-3xl border border-border shadow-sm p-5 space-y-6 text-left sticky top-24">
+            {/* User Profile Summary Header */}
+            <div className="flex items-center gap-3.5 pb-4 border-b border-border/60">
+              <div className="h-12 w-12 rounded-full border border-border flex items-center justify-center overflow-hidden flex-shrink-0 bg-background shadow-inner">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={user.name} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="h-full w-full bg-gradient-to-br from-pink-500 to-purple-600 text-white font-extrabold text-lg flex items-center justify-center">
+                    {user.name ? user.name[0].toUpperCase() : "U"}
+                  </div>
+                )}
               </div>
-              <div>
-                <h3 className="font-extrabold text-gray-800 text-base">{user.firstName} {user.lastName}</h3>
-                <p className="text-xs text-gray-400">{user.email}</p>
-              </div>
-              <div className="flex flex-wrap justify-center gap-1.5 pt-1">
-                <Badge className="bg-pink-100 text-pink-700 hover:bg-pink-100/80 border border-pink-200">
-                  Loyal Guest
-                </Badge>
-                <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100/80 border border-purple-200">
-                  {user.loyaltyPoints} Points
-                </Badge>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-black text-foreground truncate flex items-center gap-1">
+                  {user.name || "Customer"}
+                </h3>
+                <p className="text-[11px] text-muted-foreground font-semibold truncate leading-none mt-0.5">{user.email}</p>
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  <Badge className="bg-primary/20 text-primary border border-primary/30 text-[9px] py-0 px-1 pointer-events-none uppercase font-bold">VIP Member</Badge>
+                  <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[9px] py-0 px-1 pointer-events-none capitalize font-semibold">{user.accountStatus || "active"}</Badge>
+                </div>
               </div>
             </div>
 
-            {/* Sidebar Buttons */}
-            <div className="flex flex-col gap-1 text-left">
-              {[
-                { key: "profile", label: "Personal Information", icon: User },
-                { key: "orders", label: "My Orders", icon: ShoppingBag },
-                { key: "addresses", label: "Saved Addresses", icon: MapPin },
-                { key: "settings", label: "Account Settings", icon: Bell }
-              ].map((btn) => {
-                const Icon = btn.icon;
-                const isActive = activeTab === btn.key;
+            {/* Loyalty points quick widget */}
+            <div className="bg-secondary/40 border border-border p-3.5 rounded-2xl flex items-center justify-between gap-2">
+              <div className="space-y-0.5 text-left">
+                <span className="text-[9px] font-black uppercase text-primary tracking-wider">Bakery Points</span>
+                <p className="text-xs font-bold text-foreground">{user.loyaltyPoints || 0} Points</p>
+              </div>
+              <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary">
+                <Gift className="h-4.5 w-4.5" />
+              </div>
+            </div>
+
+            {/* Sidebar navigation list */}
+            <nav className="space-y-1">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.key;
+
                 return (
                   <button
-                    key={btn.key}
-                    onClick={() => setActiveTab(btn.key)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all text-left ${
+                    key={item.key}
+                    disabled={item.disabled}
+                    onClick={() => setActiveTab(item.key)}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-black transition-all ${
                       isActive
-                        ? "bg-pink-500 text-white shadow-md shadow-pink-100"
-                        : "text-gray-600 hover:bg-pink-50 hover:text-pink-650"
+                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/15 scale-[1.01]"
+                        : item.disabled
+                        ? "text-muted-foreground/50 cursor-not-allowed"
+                        : "text-muted-foreground hover:bg-secondary hover:text-primary"
                     }`}
                   >
-                    <Icon className="h-4.5 w-4.5" />
-                    <span>{btn.label}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Icon className="h-4.5 w-4.5 flex-shrink-0" />
+                        {item.badge > 0 && (
+                          <span className={`absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full text-[9px] font-black flex items-center justify-center shadow-sm border-2 animate-in zoom-in duration-300 ${
+                            isActive ? 'bg-primary-foreground text-primary border-primary' : 'bg-primary text-primary-foreground border-card'
+                          }`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                      <span>{item.label}</span>
+                    </div>
                   </button>
                 );
               })}
 
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-red-600 hover:bg-red-50 hover:text-red-700 transition-all text-left mt-4"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors mt-2"
               >
-                <LogOut className="h-4.5 w-4.5 text-red-400" />
-                <span>Logout</span>
+                <LogOut className="h-4.5 w-4.5 flex-shrink-0" />
+                <span>Sign Out</span>
               </button>
-            </div>
+            </nav>
           </aside>
 
-          {/* Right Column: Tab Panels */}
-          <main className="lg:col-span-3">
-            
-            {/* TAB: Personal Profile details */}
-            {activeTab === "profile" && (
-              <Card className="border border-pink-50 shadow-sm rounded-3xl text-left bg-white">
-                <CardHeader>
-                  <CardTitle className="text-xl font-extrabold text-gray-900 flex items-center gap-1.5">
-                    <User className="h-5 w-5 text-pink-500" /> Personal Details
-                  </CardTitle>
-                  <CardDescription>Update your personal customer details here.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleProfileSave} className="space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="firstName">First Name</Label>
-                        <Input
-                          id="firstName"
-                          value={profileForm.firstName}
-                          onChange={(e) => setProfileForm({ ...profileForm, firstName: e.target.value })}
-                          className="bg-pink-50/10 border-pink-100 focus-visible:ring-pink-500"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="lastName">Last Name</Label>
-                        <Input
-                          id="lastName"
-                          value={profileForm.lastName}
-                          onChange={(e) => setProfileForm({ ...profileForm, lastName: e.target.value })}
-                          className="bg-pink-50/10 border-pink-100 focus-visible:ring-pink-500"
-                        />
-                      </div>
+          {/* MOBILE NAVIGATION DRAWER SIDEBAR */}
+          <AnimatePresence>
+            {mobileSidebarOpen && (
+              <>
+                {/* Backdrop */}
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setMobileSidebarOpen(false)}
+                  className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] lg:hidden"
+                />
+
+                {/* Drawer Container */}
+                <motion.div
+                  initial={{ x: "-100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "-100%" }}
+                  transition={{ type: "spring", damping: 20 }}
+                  className="fixed inset-y-0 left-0 w-4/5 max-w-sm bg-card border-r border-border shadow-2xl z-[110] lg:hidden p-5 flex flex-col justify-between"
+                >
+                  <div className="space-y-6 flex-1 overflow-y-auto">
+                    {/* Header */}
+                    <div className="flex justify-between items-center pb-2 border-b border-border">
+                      <span className="font-extrabold text-base text-foreground flex items-center gap-1.5">
+                        <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+                        Account Menu
+                      </span>
+                      <button 
+                        onClick={() => setMobileSidebarOpen(false)}
+                        className="p-1 text-muted-foreground hover:bg-secondary rounded-lg"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="phone">Phone Number</Label>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                          <Input
-                            id="phone"
-                            value={profileForm.phone}
-                            onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                            className="bg-pink-50/10 border-pink-100 focus-visible:ring-pink-500 pl-10"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="birthdate">Date of Birth</Label>
-                        <Input
-                          id="birthdate"
-                          type="date"
-                          value={profileForm.birthdate}
-                          onChange={(e) => setProfileForm({ ...profileForm, birthdate: e.target.value })}
-                          className="bg-pink-50/10 border-pink-100 focus-visible:ring-pink-500"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="bio">About Me (Bio)</Label>
-                      <textarea
-                        id="bio"
-                        value={profileForm.bio}
-                        onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                        rows={3}
-                        placeholder="Tell us what kind of cakes you enjoy!"
-                        className="flex w-full rounded-2xl border border-pink-100 bg-pink-50/10 px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500 resize-none text-gray-700"
-                      />
-                    </div>
-
-                    <div className="pt-4 flex items-center gap-3">
-                      <Button type="submit" className="bg-pink-500 hover:bg-pink-600 rounded-xl font-bold">
-                        Save Profile Details
-                      </Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* TAB: Order History */}
-            {activeTab === "orders" && (
-              <Card className="border border-pink-50 shadow-sm rounded-3xl text-left bg-white">
-                <CardHeader>
-                  <CardTitle className="text-xl font-extrabold text-gray-900 flex items-center gap-1.5">
-                    <ShoppingBag className="h-5 w-5 text-pink-500" /> Order History
-                  </CardTitle>
-                  <CardDescription>View your past cake purchases and delivery tracks.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {orders.length === 0 ? (
-                    <div className="text-center py-12 space-y-4">
-                      <p className="text-gray-400 text-sm">You haven't placed any orders yet!</p>
-                      <Button asChild className="bg-pink-500 hover:bg-pink-600 rounded-xl font-bold">
-                        <Link to="/shop">Shop Now</Link>
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {orders.map((ord) => (
-                        <div
-                          key={ord.id}
-                          className="p-4 rounded-2xl border border-pink-50/70 hover:border-pink-100 bg-pink-50/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors"
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-extrabold text-pink-600 text-sm">{ord.id}</span>
-                              <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border border-yellow-200 capitalize text-[10px]">
-                                {ord.status}
-                              </Badge>
-                            </div>
-                            <h4 className="font-bold text-xs text-gray-800">
-                              {ord.items?.map((it) => `${it.name} (x${it.qty})`).join(", ")}
-                            </h4>
-                            <div className="flex gap-4 text-[10px] text-gray-400 font-semibold pt-1">
-                              <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {ord.date}</span>
-                              <span>Total: <strong className="text-gray-700 font-bold">{ord.price}</strong></span>
-                            </div>
+                    {/* User info */}
+                    <div className="flex items-center gap-3 bg-secondary/20 p-3 rounded-2xl">
+                      <div className="h-10 w-10 rounded-full border border-border flex items-center justify-center overflow-hidden bg-background">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt={user.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full bg-gradient-to-br from-pink-500 to-purple-600 text-white font-extrabold text-sm flex items-center justify-center">
+                            {user.name ? user.name[0].toUpperCase() : "U"}
                           </div>
-
-                          <Button asChild size="sm" className="bg-pink-500 hover:bg-pink-600 text-white rounded-xl text-xs font-bold shrink-0">
-                            <Link to={`/track-order?id=${ord.id.replace("#", "")}`}>
-                              Track Order Status
-                            </Link>
-                          </Button>
-                        </div>
-                      ))}
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1 text-left">
+                        <h4 className="text-xs font-black text-foreground truncate">{user.name}</h4>
+                        <p className="text-[10px] text-muted-foreground font-semibold truncate mt-0.5">{user.email}</p>
+                      </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
 
-            {/* TAB: Address management */}
-            {activeTab === "addresses" && (
-              <div className="space-y-6">
-                
-                {/* List */}
-                <Card className="border border-pink-50 shadow-sm rounded-3xl text-left bg-white">
-                  <CardHeader>
-                    <CardTitle className="text-xl font-extrabold text-gray-900 flex items-center gap-1.5">
-                      <MapPin className="h-5 w-5 text-pink-500" /> Saved Delivery Locations
-                    </CardTitle>
-                    <CardDescription>Select or clear your default delivery address targets.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {addressList.length === 0 ? (
-                      <p className="text-gray-400 text-xs text-center py-6">No saved addresses yet.</p>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {addressList.map((addr) => (
-                          <div
-                            key={addr.id}
-                            className="p-4 bg-[#FFF8F9] border border-pink-100 rounded-2xl relative flex flex-col justify-between"
+                    {/* Nav Links */}
+                    <nav className="space-y-1">
+                      {menuItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = activeTab === item.key;
+
+                        return (
+                          <button
+                            key={item.key}
+                            disabled={item.disabled}
+                            onClick={() => { setActiveTab(item.key); setMobileSidebarOpen(false); }}
+                            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-black transition-all ${
+                              isActive
+                                ? "bg-primary text-primary-foreground shadow-md shadow-primary/10"
+                                : item.disabled
+                                ? "text-muted-foreground/45 cursor-not-allowed"
+                                : "text-muted-foreground hover:bg-secondary hover:text-primary"
+                            }`}
                           >
-                            <button
-                              onClick={() => handleDeleteAddress(addr.id)}
-                              className="absolute top-4 right-4 text-gray-400 hover:text-red-500 p-1 hover:bg-red-50 rounded-full transition-all"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                            <div className="space-y-1.5 text-xs text-gray-600 text-left pr-6">
-                              <span className="font-bold text-pink-600 uppercase tracking-widest text-[10px]">
-                                {addr.label}
-                              </span>
-                              <p className="font-bold text-gray-800 leading-normal">{addr.street}</p>
-                              <p className="text-[10px] text-gray-450">{addr.city}, {addr.state} {addr.zip}</p>
+                            <div className="flex items-center gap-3">
+                              <div className="relative">
+                                <Icon className="h-4.5 w-4.5 flex-shrink-0" />
+                                {item.badge > 0 && (
+                                  <span className={`absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full text-[9px] font-black flex items-center justify-center shadow-sm border-2 animate-in zoom-in duration-300 ${
+                                    isActive ? 'bg-primary-foreground text-primary border-primary' : 'bg-primary text-primary-foreground border-card'
+                                  }`}>
+                                    {item.badge}
+                                  </span>
+                                )}
+                              </div>
+                              <span>{item.label}</span>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                          </button>
+                        );
+                      })}
+                    </nav>
+                  </div>
 
-                {/* Add Form */}
-                <Card className="border border-pink-50 shadow-sm rounded-3xl text-left bg-white">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-bold text-gray-900">Add New Address Location</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleAddAddress} className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-1.5 col-span-2">
-                          <Label htmlFor="street">Street Address</Label>
-                          <Input
-                            id="street"
-                            value={newAddr.street}
-                            onChange={(e) => setNewAddr({ ...newAddr, street: e.target.value })}
-                            placeholder="Apt 4B, 123 Maple Street"
-                            className="bg-pink-50/10 border-pink-100 text-xs"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="label">Location Name</Label>
-                          <Input
-                            id="label"
-                            value={newAddr.label}
-                            onChange={(e) => setNewAddr({ ...newAddr, label: e.target.value })}
-                            placeholder="Home / Work / Friend"
-                            className="bg-pink-50/10 border-pink-100 text-xs"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-1.5">
-                          <Label htmlFor="city">City</Label>
-                          <Input
-                            id="city"
-                            value={newAddr.city}
-                            onChange={(e) => setNewAddr({ ...newAddr, city: e.target.value })}
-                            placeholder="New York"
-                            className="bg-pink-50/10 border-pink-100 text-xs"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="state">State</Label>
-                          <Input
-                            id="state"
-                            value={newAddr.state}
-                            onChange={(e) => setNewAddr({ ...newAddr, state: e.target.value })}
-                            placeholder="NY"
-                            className="bg-pink-50/10 border-pink-100 text-xs"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="zip">ZIP Code</Label>
-                          <Input
-                            id="zip"
-                            value={newAddr.zip}
-                            onChange={(e) => setNewAddr({ ...newAddr, zip: e.target.value })}
-                            placeholder="10001"
-                            className="bg-pink-50/10 border-pink-100 text-xs"
-                          />
-                        </div>
-                      </div>
-
-                      <Button type="submit" size="sm" className="bg-pink-500 hover:bg-pink-600 rounded-xl font-bold">
-                        Save Address Location
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-              </div>
+                  {/* Footer Logout */}
+                  <div className="pt-4 border-t border-border mt-auto">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-black text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors justify-center"
+                    >
+                      <LogOut className="h-4.5 w-4.5" />
+                      <span>Sign Out Account</span>
+                    </button>
+                  </div>
+                </motion.div>
+              </>
             )}
+          </AnimatePresence>
 
-            {/* TAB: Settings & Notifications */}
-            {activeTab === "settings" && (
-              <div className="space-y-6">
-                {/* Change Password */}
-                <Card className="border border-pink-50 shadow-sm rounded-3xl text-left bg-white">
-                  <CardHeader>
-                    <CardTitle className="text-xl font-extrabold text-gray-900 flex items-center gap-1.5">
-                      <Lock className="h-5 w-5 text-pink-500" /> Change Password
-                    </CardTitle>
-                    <CardDescription>Update your secret password credentials.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handlePasswordChange} className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="current">Current Password</Label>
-                        <Input
-                          id="current"
-                          type="password"
-                          placeholder="••••••••"
-                          value={passwords.current}
-                          onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
-                          className="bg-pink-50/10 border-pink-100 focus-visible:ring-pink-500"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="newPass">New Password</Label>
-                        <Input
-                          id="newPass"
-                          type="password"
-                          placeholder="Minimum 8 characters"
-                          value={passwords.newPass}
-                          onChange={(e) => setPasswords({ ...passwords, newPass: e.target.value })}
-                          className="bg-pink-50/10 border-pink-100 focus-visible:ring-pink-500"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="confirm">Confirm Password</Label>
-                        <Input
-                          id="confirm"
-                          type="password"
-                          placeholder="••••••••"
-                          value={passwords.confirm}
-                          onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
-                          className="bg-pink-50/10 border-pink-100 focus-visible:ring-pink-500"
-                        />
-                      </div>
-                      <Button type="submit" className="bg-pink-500 hover:bg-pink-600 rounded-xl font-bold">
-                        Update Password
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-
-                {/* Notifications settings */}
-                <Card className="border border-pink-50 shadow-sm rounded-3xl text-left bg-white">
-                  <CardHeader>
-                    <CardTitle className="text-xl font-extrabold text-gray-900 flex items-center gap-1.5">
-                      <Bell className="h-5 w-5 text-pink-500" /> Notifications Settings
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {[
-                      { key: "orderUpdates", label: "Baking & Shipping Notifications", desc: "Receive text/email timeline updates on your active cakes." },
-                      { key: "promotions", label: "VIP Promotional Offers", desc: "Receive alerts for seasonal discount coupons." },
-                      { key: "newFlavors", label: "New Arrival Flavors", desc: "Be the first to hear about seasonal fresh fruit arrivals." }
-                    ].map(({ key, label, desc }) => (
-                      <div key={key} className="flex justify-between items-center py-3 border-b border-pink-50 last:border-0">
-                        <div>
-                          <h4 className="font-bold text-gray-800 text-xs sm:text-sm">{label}</h4>
-                          <p className="text-[10px] text-gray-400 mt-0.5">{desc}</p>
-                        </div>
-                        <button
-                          onClick={() => setNotifications({ ...notifications, [key]: !notifications[key] })}
-                          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
-                            notifications[key] ? "bg-pink-500" : "bg-gray-200"
-                          }`}
-                        >
-                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            notifications[key] ? "translate-x-6" : "translate-x-1"
-                          }`} />
-                        </button>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
+          {/* MAIN WORKING CONTENT AREA */}
+          <main className="col-span-1 lg:col-span-3 space-y-6">
+            {/* Header controls for mobile view */}
+            <div className="flex items-center justify-between lg:hidden border border-border p-4 bg-card rounded-2xl shadow-sm text-left">
+              <div className="space-y-0.5">
+                <span className="text-[9px] font-black uppercase text-primary tracking-wider">Account Portal</span>
+                <h2 className="text-sm font-extrabold text-foreground">{getTabTitle()}</h2>
               </div>
-            )}
+              <Button 
+                onClick={() => setMobileSidebarOpen(true)} 
+                variant="outline" 
+                size="sm" 
+                className="rounded-xl border-border hover:bg-secondary h-9 w-9 p-0 flex items-center justify-center"
+              >
+                <Menu className="h-5 w-5 text-foreground" />
+              </Button>
+            </div>
 
+            {/* Active workspace display component with page transitions */}
+            <div className="min-h-[50vh]">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  {renderActiveContent()}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </main>
-        </div>
 
+        </div>
       </div>
     </div>
   );

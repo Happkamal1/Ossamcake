@@ -97,7 +97,7 @@ const Sidebar = React.forwardRef(
       return (
         <div
           className={cn(
-            "fixed inset-y-0 left-0 z-50 flex h-full w-[--sidebar-width] flex-col bg-white shadow-xl transition-transform duration-300",
+            "fixed inset-y-0 left-0 z-50 flex h-full w-[--sidebar-width] flex-col bg-card shadow-xl transition-transform duration-300",
             openMobile ? "translate-x-0" : "-translate-x-full",
             className
           )}

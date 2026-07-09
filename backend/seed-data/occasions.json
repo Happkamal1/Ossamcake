@@ -1,0 +1,42 @@
+[
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234601" },
+    "name": "Birthday",
+    "slug": "birthday",
+    "image": "/images/occasions/birthday.jpg",
+    "displayOrder": 1,
+    "isActive": true,
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234602" },
+    "name": "Anniversary",
+    "slug": "anniversary",
+    "image": "/images/occasions/anniversary.jpg",
+    "displayOrder": 2,
+    "isActive": true,
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234603" },
+    "name": "Wedding",
+    "slug": "wedding",
+    "image": "/images/occasions/wedding.jpg",
+    "displayOrder": 3,
+    "isActive": true,
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234604" },
+    "name": "Kids Celebration",
+    "slug": "kids-celebration",
+    "image": "/images/occasions/kids.jpg",
+    "displayOrder": 4,
+    "isActive": true,
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  }
+]

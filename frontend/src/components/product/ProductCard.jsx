@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Heart, Star, ShoppingCart, Settings } from "lucide-react";
-import { useCart } from "@/context/CartContext";
-import { useWishlist } from "@/context/WishlistContext";
+import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
 import LazyImage from "@/components/shared/LazyImage";
 import { toast } from "sonner";
 
@@ -60,15 +60,15 @@ export default function ProductCard({ cake }) {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -6, transition: { duration: 0.25 } }}
-      className="group relative bg-white rounded-3xl overflow-hidden border border-pink-50 shadow-sm hover:shadow-xl transition-all flex flex-col h-full"
+      className="group relative bg-card rounded-3xl overflow-hidden border border-border shadow-sm hover:shadow-xl transition-all flex flex-col h-full"
     >
       {/* Wishlist Button */}
       <button
         onClick={handleWishlistToggle}
         className={`absolute top-4 right-4 z-10 p-2.5 rounded-full border shadow-sm transition-all focus:outline-none ${
           isWishlisted
-            ? "bg-pink-500 border-pink-500 text-white"
-            : "bg-white/80 backdrop-blur-sm border-pink-50 text-gray-400 hover:text-pink-500"
+            ? "bg-primary border-primary text-white"
+            : "bg-card/80 backdrop-blur-sm border-border text-muted-foreground hover:text-primary"
         }`}
       >
         <Heart className={`h-4.5 w-4.5 ${isWishlisted ? "fill-current" : ""}`} />
@@ -77,39 +77,39 @@ export default function ProductCard({ cake }) {
       {/* Floating Badges */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-1">
         {cake.discount > 0 && (
-          <span className="bg-pink-500 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+          <span className="bg-primary text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
             {cake.discount}% OFF
           </span>
         )}
         {cake.isBestSeller && (
-          <span className="bg-purple-600 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+          <span className="bg-accent text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
             Bestseller
           </span>
         )}
       </div>
 
       {/* Product Image Link */}
-      <Link to={`/cake/${cake.id}`} className="block relative aspect-square overflow-hidden bg-pink-50/20">
+      <Link to={`/cake/${cake.id}`} className="block relative aspect-square overflow-hidden bg-secondary">
         <LazyImage
           src={cake.image}
           alt={cake.name}
           className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
         />
         {/* Soft Hover Overlay */}
-        <div className="absolute inset-0 bg-pink-900/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </Link>
 
       {/* Product Info */}
       <div className="p-5 flex-1 flex flex-col justify-between">
         <div className="space-y-2">
           {/* Categories / Tags */}
-          <div className="text-[10px] font-bold text-pink-400 uppercase tracking-widest">
-            {cake.categories?.[0]}
+          <div className="text-[10px] font-bold text-primary uppercase tracking-widest">
+            {cake.categories?.[0]?.name || cake.categories?.[0]}
           </div>
 
           {/* Name */}
           <Link to={`/cake/${cake.id}`} className="block">
-            <h3 className="font-bold text-gray-800 group-hover:text-pink-600 line-clamp-1 transition-colors text-base">
+            <h3 className="font-bold text-foreground group-hover:text-primary line-clamp-1 transition-colors text-base">
               {cake.name}
             </h3>
           </Link>
@@ -121,31 +121,33 @@ export default function ProductCard({ cake }) {
                 <Star
                   key={i}
                   className={`h-3.5 w-3.5 ${
-                    i < Math.floor(cake.rating) ? "fill-current" : "text-gray-200"
+                    i < Math.floor(cake.rating || 0) ? "fill-current" : "text-muted"
                   }`}
                 />
               ))}
             </div>
-            <span className="text-xs text-gray-500 font-semibold">{cake.rating}</span>
-            <span className="text-xs text-gray-300">|</span>
-            <span className="text-[10px] text-gray-400 font-medium">({cake.reviewsCount} reviews)</span>
+            <span className="text-xs font-bold text-foreground">({(cake.rating || 0).toFixed(1)})</span>
+            <span className="text-xs text-muted">|</span>
+            <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+              💬 {cake.reviewsCount || 0} Reviews
+            </span>
           </div>
 
-          <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed font-normal">
+          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed font-normal">
             {cake.description}
           </p>
         </div>
 
-        <div className="mt-5 pt-3 border-t border-pink-50 flex items-center justify-between gap-2">
+        <div className="mt-5 pt-3 border-t border-border flex items-center justify-between gap-2">
           {/* Price Container */}
           <div>
             {cake.discount > 0 && (
-              <span className="text-xs text-gray-400 line-through mr-1 font-medium">
-                ${cake.basePrice.toFixed(2)}
+              <span className="text-xs text-muted-foreground line-through mr-1 font-medium">
+                ₹{cake.basePrice.toFixed(2)}
               </span>
             )}
-            <span className="text-lg font-extrabold text-pink-500">
-              ${finalPrice.toFixed(2)}
+            <span className="text-lg font-extrabold text-primary">
+              ₹{finalPrice.toFixed(2)}
             </span>
           </div>
 
@@ -154,7 +156,7 @@ export default function ProductCard({ cake }) {
             {/* Customize Link */}
             <Link
               to={`/cake/${cake.id}`}
-              className="p-2 rounded-xl bg-pink-50 text-pink-600 hover:bg-pink-100 transition-colors"
+              className="p-2 rounded-xl bg-secondary text-primary hover:bg-secondary/80 transition-colors"
               title="Customize Cake"
             >
               <Settings className="h-4 w-4" />
@@ -163,7 +165,7 @@ export default function ProductCard({ cake }) {
             {/* Quick Add */}
             <button
               onClick={handleAddToCart}
-              className="px-3.5 py-2 rounded-xl bg-pink-500 hover:bg-pink-650 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm hover:shadow"
+              className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm hover:shadow"
             >
               <ShoppingCart className="h-3.5 w-3.5" />
               <span>Add</span>

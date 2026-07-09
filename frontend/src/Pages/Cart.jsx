@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, ShoppingBag, Plus, Minus, Gift, Percent, CreditCard, ChevronRight } from "lucide-react";
@@ -15,6 +15,7 @@ const CROSS_SELLS = [
 export default function Cart() {
   const {
     cartItems,
+    getCart,
     removeFromCart,
     updateQuantity,
     coupon,
@@ -28,6 +29,10 @@ export default function Cart() {
   } = useCart();
 
   const [couponCode, setCouponCode] = useState("");
+
+  useEffect(() => {
+    getCart();
+  }, []);
 
   const handleApplyCoupon = (e) => {
     e.preventDefault();
@@ -65,13 +70,13 @@ export default function Cart() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center bg-[#FFF8F9] py-12 px-4 text-center">
-        <div className="h-20 w-20 bg-pink-100/60 rounded-full flex items-center justify-center text-pink-500 mb-6">
+      <div className="min-h-[60vh] flex flex-col items-center justify-center bg-background py-12 px-4 text-center">
+        <div className="h-20 w-20 bg-secondary rounded-full flex items-center justify-center text-primary mb-6">
           <ShoppingBag className="h-10 w-10" />
         </div>
-        <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Your Shopping Cart is Empty</h2>
-        <p className="text-gray-500 mb-8 max-w-sm">Add some delicious cakes to your cart and make your celebrations memorable.</p>
-        <Button asChild className="bg-pink-500 hover:bg-pink-600 rounded-full font-bold px-8 py-5">
+        <h2 className="text-2xl font-extrabold text-foreground mb-2">Your Shopping Cart is Empty</h2>
+        <p className="text-muted-foreground mb-8 max-w-sm">Add some delicious cakes to your cart and make your celebrations memorable.</p>
+        <Button asChild className="bg-primary hover:bg-primary rounded-full font-bold px-8 py-5">
           <Link to="/shop">Browse Cakes</Link>
         </Button>
       </div>
@@ -79,38 +84,38 @@ export default function Cart() {
   }
 
   return (
-    <div className="bg-[#FFF8F9] min-h-screen py-12">
+    <div className="bg-background min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Title */}
-        <h1 className="text-3xl font-extrabold text-gray-900 text-left mb-10">Shopping Cart</h1>
+        <h1 className="text-3xl font-extrabold text-foreground text-left mb-10">Shopping Cart</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Left Column: Cart Items list */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm p-6 space-y-6">
+            <div className="bg-card rounded-3xl border border-border shadow-sm p-6 space-y-6">
               {cartItems.map((item) => {
                 const discountedUnitPrice = item.price * (1 - (item.discount || 0) / 100);
                 const lineTotal = discountedUnitPrice * item.quantity;
                 
                 return (
-                  <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-pink-50 last:border-0 last:pb-0">
+                  <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border last:border-0 last:pb-0">
                     
                     {/* Cake Image & Details */}
                     <div className="flex items-center gap-4">
-                      <div className="h-20 w-20 rounded-2xl overflow-hidden shrink-0 border border-pink-50 bg-pink-50/10">
+                      <div className="h-20 w-20 rounded-2xl overflow-hidden shrink-0 border border-border bg-secondary">
                         <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
                       </div>
                       
                       <div className="text-left space-y-1">
-                        <h3 className="font-bold text-gray-800 text-sm sm:text-base line-clamp-1">{item.name}</h3>
+                        <h3 className="font-bold text-foreground text-sm sm:text-base line-clamp-1">{item.name}</h3>
                         
                         {/* Custom tags */}
                         <div className="flex flex-wrap gap-2 text-[10px]">
-                          <span className="bg-pink-50 text-pink-600 px-2 py-0.5 rounded font-semibold border border-pink-100">
+                          <span className="bg-secondary text-primary px-2 py-0.5 rounded font-semibold border border-border">
                             {item.flavor}
                           </span>
-                          <span className="bg-purple-50 text-purple-600 px-2 py-0.5 rounded font-semibold border border-purple-100">
+                          <span className="bg-accent/10 text-foreground px-2 py-0.5 rounded font-semibold border border-border">
                             {item.weight}
                           </span>
                           {item.isEggless && (
@@ -121,19 +126,19 @@ export default function Cart() {
                         </div>
 
                         {item.cakeMessage && (
-                          <div className="text-xs text-gray-500 font-medium">
-                            Message: <span className="text-pink-600 italic">"{item.cakeMessage}"</span>
+                          <div className="text-xs text-muted-foreground font-medium">
+                            Message: <span className="text-primary italic">"{item.cakeMessage}"</span>
                           </div>
                         )}
 
                         {item.photoUpload && (
-                          <div className="text-xs text-gray-400 font-semibold flex items-center gap-1.5">
-                            <span className="h-1.5 w-1.5 bg-green-500 rounded-full" /> Photo layout added
+                          <div className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5">
+                            <span className="h-1.5 w-1.5 bg-primary rounded-full" /> Photo layout added
                           </div>
                         )}
 
                         {item.deliveryDate && (
-                          <div className="text-[10px] text-gray-400 font-medium">
+                          <div className="text-[10px] text-muted-foreground font-medium">
                             Scheduled: {item.deliveryDate} | {item.deliveryTimeSlot}
                           </div>
                         )}
@@ -144,17 +149,17 @@ export default function Cart() {
                     <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
                       
                       {/* Quantity Controls */}
-                      <div className="flex items-center border border-pink-100 rounded-full bg-pink-50/30 overflow-hidden">
+                      <div className="flex items-center border border-border rounded-full bg-secondary overflow-hidden">
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="p-2 text-gray-500 hover:text-pink-500 hover:bg-pink-100 transition-colors"
+                          className="p-2 text-muted-foreground hover:text-primary hover:bg-secondary/80 transition-colors"
                         >
                           <Minus className="h-3.5 w-3.5" />
                         </button>
-                        <span className="px-4 text-xs font-bold text-gray-800">{item.quantity}</span>
+                        <span className="px-4 text-xs font-bold text-foreground">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="p-2 text-gray-500 hover:text-pink-500 hover:bg-pink-100 transition-colors"
+                          className="p-2 text-muted-foreground hover:text-primary hover:bg-secondary/80 transition-colors"
                         >
                           <Plus className="h-3.5 w-3.5" />
                         </button>
@@ -162,14 +167,14 @@ export default function Cart() {
 
                       {/* Prices */}
                       <div className="text-right">
-                        <div className="text-sm font-extrabold text-pink-500">${lineTotal.toFixed(2)}</div>
-                        <div className="text-[10px] text-gray-400 font-medium">${discountedUnitPrice.toFixed(2)} each</div>
+                        <div className="text-sm font-extrabold text-primary">₹{lineTotal.toFixed(2)}</div>
+                        <div className="text-[10px] text-muted-foreground font-medium">₹{discountedUnitPrice.toFixed(2)} each</div>
                       </div>
 
                       {/* Delete */}
                       <button
                         onClick={() => removeFromCart(item.id)}
-                        className="text-gray-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-full transition-all shrink-0"
+                        className="text-muted-foreground hover:text-destructive p-2 hover:bg-destructive/10 rounded-full transition-all shrink-0"
                       >
                         <Trash2 className="h-4.5 w-4.5" />
                       </button>
@@ -181,23 +186,23 @@ export default function Cart() {
             </div>
 
             {/* Cross Sells Section */}
-            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm p-6 space-y-6">
-              <h3 className="text-lg font-extrabold text-gray-800 text-left">Frequently Bought Together</h3>
+            <div className="bg-card rounded-3xl border border-border shadow-sm p-6 space-y-6">
+              <h3 className="text-lg font-extrabold text-foreground text-left">Frequently Bought Together</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 {CROSS_SELLS.map((item) => (
-                  <div key={item.id} className="p-4 rounded-2xl bg-pink-50/20 border border-pink-100/30 text-center flex flex-col justify-between items-center space-y-3">
-                    <div className="h-16 w-16 rounded-full overflow-hidden border border-pink-100 bg-white">
+                  <div key={item.id} className="p-4 rounded-2xl bg-secondary border border-border text-center flex flex-col justify-between items-center space-y-3">
+                    <div className="h-16 w-16 rounded-full overflow-hidden border border-border bg-card">
                       <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="font-bold text-gray-800 text-xs line-clamp-1">{item.name}</h4>
-                      <p className="text-xs text-pink-500 font-bold">${item.price.toFixed(2)}</p>
+                      <h4 className="font-bold text-foreground text-xs line-clamp-1">{item.name}</h4>
+                      <p className="text-xs text-primary font-bold">${item.price.toFixed(2)}</p>
                     </div>
                     <Button
                       onClick={() => handleAddCrossSell(item)}
                       size="sm"
                       variant="outline"
-                      className="border-pink-200 hover:bg-pink-50 text-pink-650 rounded-full font-bold text-xs"
+                      className="border-border hover:bg-secondary text-primary rounded-full font-bold text-xs"
                     >
                       Add Extra
                     </Button>
@@ -211,9 +216,9 @@ export default function Cart() {
           <aside className="space-y-6">
             
             {/* Promo Code Box */}
-            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm p-6">
-              <h3 className="font-bold text-gray-800 text-sm text-left mb-4 flex items-center gap-1.5">
-                <Gift className="h-4 w-4 text-pink-500" /> Apply Coupon Code
+            <div className="bg-card rounded-3xl border border-border shadow-sm p-6">
+              <h3 className="font-bold text-foreground text-sm text-left mb-4 flex items-center gap-1.5">
+                <Gift className="h-4 w-4 text-primary" /> Apply Coupon Code
               </h3>
               
               {coupon ? (
@@ -233,9 +238,9 @@ export default function Cart() {
                     placeholder="E.g., WELCOME10"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value)}
-                    className="bg-pink-50/20 border-pink-100 focus-visible:ring-pink-500 rounded-xl text-sm"
+                    className="bg-secondary border-border focus-visible:ring-ring rounded-xl text-sm"
                   />
-                  <Button type="submit" className="bg-pink-500 hover:bg-pink-600 rounded-xl font-bold">
+                  <Button type="submit" className="bg-primary hover:bg-primary rounded-xl font-bold">
                     Apply
                   </Button>
                 </form>
@@ -243,44 +248,44 @@ export default function Cart() {
             </div>
 
             {/* Subtotal Checkout Panel */}
-            <div className="bg-white rounded-3xl border border-pink-50 shadow-sm p-6 space-y-6 text-left">
-              <h3 className="font-bold text-gray-900 text-lg border-b border-pink-50 pb-3">Order Summary</h3>
+            <div className="bg-card rounded-3xl border border-border shadow-sm p-6 space-y-6 text-left">
+              <h3 className="font-bold text-foreground text-lg border-b border-border pb-3">Order Summary</h3>
               
-              <div className="space-y-3 text-sm text-gray-650">
+              <div className="space-y-3 text-sm text-muted-foreground">
                 <div className="flex justify-between">
                   <span>Cart Subtotal</span>
-                  <span className="font-semibold text-gray-900">${subtotal.toFixed(2)}</span>
+                  <span className="font-semibold text-foreground">₹{subtotal.toFixed(2)}</span>
                 </div>
                 
                 {coupon && (
                   <div className="flex justify-between text-green-600 font-medium">
                     <span>Promo Discount ({coupon.code})</span>
-                    <span>-${discountAmount.toFixed(2)}</span>
+                    <span>-₹{discountAmount.toFixed(2)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between">
                   <span>Estimated Delivery</span>
-                  <span className="font-semibold text-gray-900">
-                    {deliveryCharge === 0 ? <strong className="text-green-600">FREE</strong> : `$${deliveryCharge.toFixed(2)}`}
+                  <span className="font-semibold text-foreground">
+                    {deliveryCharge === 0 ? <strong className="text-green-600">FREE</strong> : `₹${deliveryCharge.toFixed(2)}`}
                   </span>
                 </div>
               </div>
 
-              <hr className="border-pink-50" />
+              <hr className="border-border" />
 
-              <div className="flex justify-between text-base sm:text-lg font-black text-gray-900">
+              <div className="flex justify-between text-base sm:text-lg font-black text-foreground">
                 <span>Grand Total</span>
-                <span className="text-pink-500">${grandTotal.toFixed(2)}</span>
+                <span className="text-primary">₹{grandTotal.toFixed(2)}</span>
               </div>
 
               {subtotal < 80 && (
-                <p className="text-[10px] text-gray-400 bg-pink-50/30 p-3 rounded-xl border border-pink-100/50 leading-relaxed text-center">
-                  💡 Add only <strong className="text-pink-500">${(80 - subtotal).toFixed(2)}</strong> more to unlock <strong>FREE DELIVERY</strong>!
+                <p className="text-[10px] text-muted-foreground bg-secondary p-3 rounded-xl border border-border leading-relaxed text-center">
+                  💡 Add only <strong className="text-primary">₹{(80 - subtotal).toFixed(2)}</strong> more to unlock <strong>FREE DELIVERY</strong>!
                 </p>
               )}
 
-              <Button asChild className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-6 rounded-2xl flex items-center justify-center gap-1.5 shadow-lg shadow-pink-100 text-base">
+              <Button asChild className="w-full bg-primary hover:bg-primary text-primary-foreground font-bold py-6 rounded-2xl flex items-center justify-center gap-1.5 shadow-lg shadow-primary/10 text-base">
                 <Link to="/checkout">
                   Proceed to Checkout <ChevronRight className="h-5 w-5" />
                 </Link>

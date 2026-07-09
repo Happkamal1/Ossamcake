@@ -1,80 +1,40 @@
-import { createContext, useState, useEffect, useContext } from "react";
+import { createContext, useContext, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getMe, loginUser, logoutUser, registerUser } from "@/features/auth/authSlice";
 
 const AuthContext = createContext();
 
-const MOCK_USER = {
-  firstName: "Sarah",
-  lastName: "Johnson",
-  email: "sarah.johnson@example.com",
-  phone: "+1 (555) 234-5678",
-  address: "123 Maple Street, New York, NY 10001",
-  birthdate: "1990-05-15",
-  bio: "Cake lover since forever! I especially enjoy trying new flavors.",
-  avatar: "/placeholder.svg?height=96&width=96",
-  loyaltyPoints: 450
-};
-
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { user, loading } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("cake_auth_user");
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        console.error("Error loading user", e);
-      }
-    } else {
-      // Seed with initial mock user by default for ease of testing
-      setUser(MOCK_USER);
-      localStorage.setItem("cake_auth_user", JSON.stringify(MOCK_USER));
-    }
-    setLoading(false);
-  }, []);
+    dispatch(getMe());
+  }, [dispatch]);
 
   const login = async (email, password) => {
-    setLoading(true);
-    // Simulating authentication delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    const loggedUser = {
-      ...MOCK_USER,
-      email: email,
-      firstName: email.split("@")[0] || "Sarah",
-      lastName: "User"
-    };
-    setUser(loggedUser);
-    localStorage.setItem("cake_auth_user", JSON.stringify(loggedUser));
-    setLoading(false);
-    return { success: true };
+    const res = await dispatch(loginUser({ email, password }));
+    if (res.meta.requestStatus === 'rejected') {
+      throw new Error(res.payload?.message || res.payload || "Login failed");
+    }
+    return { success: true, user: res.payload.data.user };
   };
 
   const signup = async (firstName, lastName, email, password) => {
-    setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    const newUser = {
-      ...MOCK_USER,
-      firstName,
-      lastName,
-      email,
-      loyaltyPoints: 100 // new signup bonus!
-    };
-    setUser(newUser);
-    localStorage.setItem("cake_auth_user", JSON.stringify(newUser));
-    setLoading(false);
+    const name = `${firstName} ${lastName}`;
+    const res = await dispatch(registerUser({ name, email, password }));
+    if (res.meta.requestStatus === 'rejected') {
+      throw new Error(res.payload || "Registration failed");
+    }
     return { success: true };
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("cake_auth_user");
+  const logout = async () => {
+    await dispatch(logoutUser());
   };
 
-  const updateProfile = (updatedData) => {
-    const updatedUser = { ...user, ...updatedData };
-    setUser(updatedUser);
-    localStorage.setItem("cake_auth_user", JSON.stringify(updatedUser));
+  const updateProfile = () => {
+    // Optional placeholder to match context shape if needed
   };
 
   return (

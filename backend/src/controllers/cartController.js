@@ -1,92 +1,66 @@
-const Cart = require("../models/Cart");
-const Cake = require("../models/Cake");
+const cartService = require("../services/cartService");
+const ApiResponse = require("../utils/ApiResponse");
+const asyncHandler = require("../utils/asyncHandler");
 
-const addToCart = async (req, res) => {
+/**
+ * @desc    Get user's cart
+ * @route   GET /api/v1/cart
+ * @access  Protected
+ */
+const getCart = asyncHandler(async (req, res) => {
+  const cart = await cartService.getOrCreateCart(req.user._id);
+  res.status(200).json(new ApiResponse(200, cart, "Cart fetched successfully"));
+});
 
-    try {
+/**
+ * @desc    Add item to cart
+ * @route   POST /api/v1/cart/add
+ * @access  Protected
+ */
+const addToCart = asyncHandler(async (req, res) => {
+  const cart = await cartService.addItemToCart(req.user._id, req.body);
+  res.status(200).json(new ApiResponse(200, cart, "Item added to cart"));
+});
 
-        const { cakeId, flavor, size, quantity, price } = req.body;
+/**
+ * @desc    Update cart item quantity
+ * @route   PUT /api/v1/cart/:itemId
+ * @access  Protected
+ */
+const updateCartItem = asyncHandler(async (req, res) => {
+  const cart = await cartService.updateCartItem(req.user._id, req.params.itemId, req.body.quantity);
+  res.status(200).json(new ApiResponse(200, cart, "Cart item updated"));
+});
 
-        // Validate cakeId
-        if (!cakeId || cakeId === "CAKE_ID") {
-            return res.status(400).json({
-                success: false,
-                message: "Valid cake ID is required"
-            });
-        }
+/**
+ * @desc    Remove single item from cart
+ * @route   DELETE /api/v1/cart/:itemId
+ * @access  Protected
+ */
+const removeFromCart = asyncHandler(async (req, res) => {
+  const cart = await cartService.removeCartItem(req.user._id, req.params.itemId);
+  res.status(200).json(new ApiResponse(200, cart, "Item removed from cart"));
+});
 
-        // Check if cake exists
-        const cake = await Cake.findById(cakeId);
-        if (!cake) {
-            return res.status(404).json({
-                success: false,
-                message: "Cake not found"
-            });
-        }
+/**
+ * @desc    Clear entire cart
+ * @route   DELETE /api/v1/cart
+ * @access  Protected
+ */
+const clearCart = asyncHandler(async (req, res) => {
+  await cartService.clearCart(req.user._id);
+  res.status(200).json(new ApiResponse(200, null, "Cart cleared successfully"));
+});
 
-        const userId = req.user.id;
+/**
+ * @desc    Apply coupon to cart
+ * @route   POST /api/v1/cart/coupon
+ * @access  Protected
+ */
+const applyCoupon = asyncHandler(async (req, res) => {
+  const { code, subtotal } = req.body;
+  const result = await cartService.applyCoupon(req.user._id, code, subtotal);
+  res.status(200).json(new ApiResponse(200, result, `Coupon "${result.coupon.code}" applied — saved $${result.discountAmount.toFixed(2)}`));
+});
 
-        let cart = await Cart.findOne({ user: userId });
-
-        if (!cart) {
-            cart = new Cart({
-                user: userId,
-                items: []
-            });
-        }
-
-        cart.items.push({
-            cake: cakeId,
-            flavor,
-            size,
-            quantity,
-            price
-        });
-
-        await cart.save();
-
-        res.json({
-            success: true,
-            message: "Cake added to cart",
-            data: cart
-        });
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Server error"
-        });
-
-    }
-};
-
-const getCart = async (req, res) => {
-
-    try {
-
-        const cart = await Cart.findOne({
-            user: req.user.id
-        }).populate("items.cake")
-
-        res.json({
-            success: true,
-            data: cart
-        })
-
-    } catch (err) {
-        console.log(err)
-        res.status(500).json({
-            success: false,
-            message: "Server error"
-        })
-
-    }
-}
-
-module.exports = {
-    addToCart,
-    getCart
-}
+module.exports = { getCart, addToCart, updateCartItem, removeFromCart, clearCart, applyCoupon };

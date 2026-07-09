@@ -15,7 +15,7 @@ export default function LazyImage({ src, alt, className = "", ...props }) {
   }, [src]);
 
   return (
-    <div className={`relative overflow-hidden bg-pink-50/50 ${className}`}>
+    <div className={`relative overflow-hidden bg-secondary ${className}`}>
       {/* Loading Skeleton */}
       {!loaded && (
         <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-pink-50 via-pink-100/50 to-pink-50 flex items-center justify-center">

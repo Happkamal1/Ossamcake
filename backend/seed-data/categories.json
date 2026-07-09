@@ -1,0 +1,62 @@
+[
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234501" },
+    "name": "Birthday Cakes",
+    "slug": "birthday-cakes",
+    "image": "/images/categories/birthday.jpg",
+    "displayOrder": 1,
+    "isActive": true,
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234502" },
+    "name": "Wedding Cakes",
+    "slug": "wedding-cakes",
+    "image": "/images/categories/wedding.jpg",
+    "displayOrder": 2,
+    "isActive": true,
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234503" },
+    "name": "Anniversary Cakes",
+    "slug": "anniversary-cakes",
+    "image": "/images/categories/anniversary.jpg",
+    "displayOrder": 3,
+    "isActive": true,
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234504" },
+    "name": "Photo Cakes",
+    "slug": "photo-cakes",
+    "image": "/images/categories/photo.jpg",
+    "displayOrder": 4,
+    "isActive": true,
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234505" },
+    "name": "Kids Cakes",
+    "slug": "kids-cakes",
+    "image": "/images/categories/kids.jpg",
+    "displayOrder": 5,
+    "isActive": true,
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234506" },
+    "name": "Premium Cakes",
+    "slug": "premium-cakes",
+    "image": "/images/categories/premium.jpg",
+    "displayOrder": 6,
+    "isActive": true,
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  }
+]

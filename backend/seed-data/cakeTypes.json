@@ -1,0 +1,29 @@
+[
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234701" },
+    "name": "Premium Cakes",
+    "slug": "premium-cakes",
+    "description": "Our finest selection of gourmet and luxury celebration cakes.",
+    "isActive": true,
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234702" },
+    "name": "Photo Cakes",
+    "slug": "photo-cakes",
+    "description": "Cakes featuring high-quality edible photo printing.",
+    "isActive": true,
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "64b0f1a9d8a3f8c8b1234703" },
+    "name": "Standard Cakes",
+    "slug": "standard-cakes",
+    "description": "Classic and delicious daily celebration cakes.",
+    "isActive": true,
+    "createdAt": { "$date": "2026-07-06T12:00:00.000Z" },
+    "updatedAt": { "$date": "2026-07-06T12:00:00.000Z" }
+  }
+]

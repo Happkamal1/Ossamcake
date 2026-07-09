@@ -14,32 +14,18 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* Navbar */}
-      <nav className="flex items-center justify-between px-8 py-5 border-b border-gray-100">
-        <Link to="/" className="flex items-center gap-2 text-pink-500 font-bold text-xl">
-          <CakeSlice className="h-6 w-6" />
-          OssamCake
-        </Link>
-        <div className="flex gap-6 text-sm font-medium text-gray-600">
-          <Link to="/" className="hover:text-pink-500 transition-colors">Home</Link>
-          <Link to="/shop" className="hover:text-pink-500 transition-colors">Shop</Link>
-          <Link to="/about" className="hover:text-pink-500 transition-colors">About</Link>
-          <Link to="/contact" className="text-pink-500">Contact</Link>
-          <Link to="/career" className="hover:text-pink-500 transition-colors">Careers</Link>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-card" >
 
       {/* Hero */}
-      <section className="bg-gradient-to-br from-pink-50 via-white to-purple-50 py-20 px-8 text-center">
+      <section className="bg-gradient-to-br from-secondary/40 via-background to-secondary/20 py-20 px-8 text-center">
         <div className="max-w-2xl mx-auto">
-          <span className="inline-block bg-pink-100 text-pink-600 text-xs font-semibold px-3 py-1 rounded-full mb-4 uppercase tracking-wider">
+          <span className="inline-block bg-secondary text-primary text-xs font-semibold px-3 py-1 rounded-full mb-4 uppercase tracking-wider">
             Get in Touch
           </span>
-          <h1 className="text-5xl font-extrabold text-gray-900 leading-tight mb-4">
-            We'd Love to <span className="text-pink-500">Hear</span> From You
+          <h1 className="text-5xl font-extrabold text-foreground leading-tight mb-4">
+            We'd Love to <span className="text-primary">Hear</span> From You
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-muted-foreground">
             Have a question, custom order request, or just want to say hello? We're here for you!
           </p>
         </div>
@@ -51,7 +37,7 @@ export default function Contact() {
           {/* Info */}
           <div className="flex flex-col gap-8">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Contact Information</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-6">Contact Information</h2>
               <div className="flex flex-col gap-5">
                 {[
                   { icon: MapPin, label: "Address", value: "123 Baker Street, New York, NY 10001" },
@@ -59,12 +45,12 @@ export default function Contact() {
                   { icon: Mail, label: "Email", value: "hello@ossamcake.com" },
                 ].map(({ icon: Icon, label, value }) => (
                   <div key={label} className="flex items-start gap-4">
-                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-pink-100 flex items-center justify-center">
-                      <Icon className="h-5 w-5 text-pink-500" />
+                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-secondary flex items-center justify-center">
+                      <Icon className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">{label}</p>
-                      <p className="text-gray-700 font-medium">{value}</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
+                      <p className="text-foreground font-medium">{value}</p>
                     </div>
                   </div>
                 ))}
@@ -72,33 +58,33 @@ export default function Contact() {
             </div>
 
             <div>
-              <h3 className="font-bold text-gray-900 mb-3">Business Hours</h3>
+              <h3 className="font-bold text-foreground mb-3">Business Hours</h3>
               <div className="space-y-2 text-sm">
                 {[
                   { day: "Monday – Friday", hours: "9:00 AM – 8:00 PM" },
                   { day: "Saturday", hours: "10:00 AM – 6:00 PM" },
                   { day: "Sunday", hours: "Closed" },
                 ].map(({ day, hours }) => (
-                  <div key={day} className="flex justify-between text-gray-600 border-b border-gray-50 pb-2">
+                  <div key={day} className="flex justify-between text-muted-foreground border-b border-border pb-2">
                     <span>{day}</span>
-                    <span className="font-medium text-gray-800">{hours}</span>
+                    <span className="font-medium text-foreground">{hours}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Map placeholder */}
-            <div className="rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 h-40 flex items-center justify-center border border-pink-200">
+            <div className="rounded-2xl bg-gradient-to-br from-secondary to-secondary/60 h-40 flex items-center justify-center border border-border">
               <div className="text-center">
-                <MapPin className="h-8 w-8 text-pink-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">123 Baker Street, New York</p>
+                <MapPin className="h-8 w-8 text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">123 Baker Street, New York</p>
               </div>
             </div>
           </div>
 
           {/* Form */}
-          <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Send us a Message</h2>
+          <div className="bg-card rounded-2xl shadow-md p-8 border border-border">
+            <h2 className="text-2xl font-bold text-foreground mb-6">Send us a Message</h2>
             {sent && (
               <div className="mb-5 rounded-lg bg-green-50 border border-green-200 p-4 text-green-700 text-sm font-medium">
                 ✓ Message sent! We'll get back to you within 24 hours.
@@ -106,7 +92,7 @@ export default function Contact() {
             )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="name">
+                <label className="block text-sm font-medium text-foreground mb-1" htmlFor="name">
                   Full Name
                 </label>
                 <input
@@ -116,11 +102,11 @@ export default function Contact() {
                   value={form.name}
                   onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                   placeholder="Sarah Johnson"
-                  className="flex h-9 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-400 placeholder:text-gray-400"
+                  className="flex h-9 w-full rounded-md border border-border bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring placeholder:text-muted-foreground"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="cemail">
+                <label className="block text-sm font-medium text-foreground mb-1" htmlFor="cemail">
                   Email Address
                 </label>
                 <input
@@ -130,11 +116,11 @@ export default function Contact() {
                   value={form.email}
                   onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                   placeholder="sarah@example.com"
-                  className="flex h-9 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-400 placeholder:text-gray-400"
+                  className="flex h-9 w-full rounded-md border border-border bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring placeholder:text-muted-foreground"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="subject">
+                <label className="block text-sm font-medium text-foreground mb-1" htmlFor="subject">
                   Subject
                 </label>
                 <input
@@ -144,11 +130,11 @@ export default function Contact() {
                   value={form.subject}
                   onChange={(e) => setForm((p) => ({ ...p, subject: e.target.value }))}
                   placeholder="Custom cake order inquiry"
-                  className="flex h-9 w-full rounded-md border border-gray-200 bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-400 placeholder:text-gray-400"
+                  className="flex h-9 w-full rounded-md border border-border bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring placeholder:text-muted-foreground"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="message">
+                <label className="block text-sm font-medium text-foreground mb-1" htmlFor="message">
                   Message
                 </label>
                 <textarea
@@ -158,12 +144,12 @@ export default function Contact() {
                   value={form.message}
                   onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
                   placeholder="Tell us about your cake order or any questions..."
-                  className="flex w-full rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-400 placeholder:text-gray-400 resize-none"
+                  className="flex w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring placeholder:text-muted-foreground resize-none"
                 />
               </div>
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2.5 transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary hover:bg-primary text-white font-semibold py-2.5 transition-colors"
               >
                 <Send className="h-4 w-4" />
                 Send Message

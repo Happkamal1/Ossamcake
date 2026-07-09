@@ -1,15 +1,17 @@
-const express = require("express")
-const router = express.Router()
+const express = require("express");
+const router = express.Router();
+const { placeOrder, getMyOrders, getOrder, updateOrderStatus } = require("../controllers/orderController");
+const { protect, restrictTo } = require("../middlewares/authMiddlewares");
 
-const protect = require("../middlewares/authMiddlewares")
+// Public — anyone with order number can track (TrackOrder.jsx)
+router.get("/:orderNumber", getOrder);
 
-const {
- placeOrder,
- getOrders
-} = require("../controllers/orderController")
+// Protected
+router.use(protect);
+router.post("/", placeOrder);
+router.get("/", getMyOrders);
 
-router.post("/place-order",protect,placeOrder)
+// Admin
+router.patch("/:id/status", restrictTo("admin"), updateOrderStatus);
 
-router.get("/my-orders",protect,getOrders)
-
-module.exports = router
+module.exports = router;
