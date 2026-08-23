@@ -14,6 +14,24 @@ const getUnreadCount = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, { count }, "Unread count fetched successfully"));
 });
 
+// GET /api/v1/notifications/slug/:slug  — slug-based detail + auto-mark-read
+const getNotificationBySlug = asyncHandler(async (req, res) => {
+  const result = await notificationService.getUserNotificationBySlug(
+    req.user._id,
+    req.params.slug
+  );
+  res.status(200).json(new ApiResponse(200, result, "Notification fetched successfully"));
+});
+
+// GET /api/v1/notifications/:id  — ObjectId-based detail + auto-mark-read (backward compat)
+const getNotificationById = asyncHandler(async (req, res) => {
+  const result = await notificationService.getUserNotificationById(
+    req.user._id,
+    req.params.id
+  );
+  res.status(200).json(new ApiResponse(200, result, "Notification fetched successfully"));
+});
+
 // PATCH /api/v1/notifications/:id/read
 const markAsRead = asyncHandler(async (req, res) => {
   await notificationService.markAsRead(req.user._id, req.params.id);
@@ -32,4 +50,12 @@ const deleteNotification = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, null, "Notification deleted"));
 });
 
-module.exports = { getMyNotifications, getUnreadCount, markAsRead, markAllAsRead, deleteNotification };
+module.exports = {
+  getMyNotifications,
+  getUnreadCount,
+  getNotificationBySlug,
+  getNotificationById,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
+};

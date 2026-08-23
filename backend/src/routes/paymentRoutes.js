@@ -12,8 +12,8 @@ const {
   initiateRefund,
   retryPayment,
 } = require("../controllers/paymentController");
-const { protect, adminOnly } = require("../middlewares/authMiddlewares");
-const { validate } = require("../middlewares/validate.middleware");
+const { protect, authorize } = require("../middlewares/authMiddlewares");
+const validate = require("../middlewares/validate.middleware");
 const {
   validateCreateOrder,
   validatePaymentVerification,
@@ -137,7 +137,7 @@ router.post(
 router.post(
   "/:paymentId/refund",
   protect,
-  adminOnly,
+  authorize("admin", "super_admin"),
   validateRefund,
   validate,
   initiateRefund

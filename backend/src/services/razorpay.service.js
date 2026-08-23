@@ -34,12 +34,11 @@ class RazorpayService {
   initialize() {
     if (this.keyId && this.keySecret) {
       try {
-        // UNCOMMENT THIS WHEN RAZORPAY SDK IS INSTALLED
-        // const Razorpay = require("razorpay");
-        // this.razorpayInstance = new Razorpay({
-        //   key_id: this.keyId,
-        //   key_secret: this.keySecret,
-        // });
+        const Razorpay = require("razorpay");
+        this.razorpayInstance = new Razorpay({
+          key_id: this.keyId,
+          key_secret: this.keySecret,
+        });
         
         this.isConfigured = true;
         console.log("✅ Razorpay Service: Configured and ready");
@@ -102,12 +101,8 @@ class RazorpayService {
           payment_capture: 1, // Auto-capture payment
         };
 
-        // UNCOMMENT THIS WHEN USING REAL RAZORPAY
-        // const order = await this.razorpayInstance.orders.create(options);
-        // return order;
-
-        // For now, return mock (remove this when uncommenting above)
-        return this._createMockOrder(options);
+        const order = await this.razorpayInstance.orders.create(options);
+        return order;
       } catch (error) {
         console.error("Razorpay order creation failed:", error);
         throw new ApiError(500, `Payment gateway error: ${error.message}`);
@@ -196,12 +191,8 @@ class RazorpayService {
   async fetchPayment(paymentId) {
     if (this.isConfigured && this.razorpayInstance) {
       try {
-        // UNCOMMENT THIS WHEN USING REAL RAZORPAY
-        // const payment = await this.razorpayInstance.payments.fetch(paymentId);
-        // return payment;
-
-        // Mock response for now
-        return this._createMockPayment(paymentId);
+        const payment = await this.razorpayInstance.payments.fetch(paymentId);
+        return payment;
       } catch (error) {
         console.error("Failed to fetch payment:", error);
         throw new ApiError(500, `Failed to fetch payment: ${error.message}`);
@@ -268,15 +259,11 @@ class RazorpayService {
   async initiateRefund(paymentId, amount, notes = {}) {
     if (this.isConfigured && this.razorpayInstance) {
       try {
-        // UNCOMMENT THIS WHEN USING REAL RAZORPAY
-        // const refund = await this.razorpayInstance.payments.refund(paymentId, {
-        //   amount: amount,
-        //   notes: notes,
-        // });
-        // return refund;
-
-        // Mock response for now
-        return this._createMockRefund(paymentId, amount);
+        const refund = await this.razorpayInstance.payments.refund(paymentId, {
+          amount: amount,
+          notes: notes,
+        });
+        return refund;
       } catch (error) {
         console.error("Refund initiation failed:", error);
         throw new ApiError(500, `Refund failed: ${error.message}`);
@@ -310,15 +297,11 @@ class RazorpayService {
   async capturePayment(paymentId, amount) {
     if (this.isConfigured && this.razorpayInstance) {
       try {
-        // UNCOMMENT THIS WHEN USING REAL RAZORPAY
-        // const payment = await this.razorpayInstance.payments.capture(
-        //   paymentId,
-        //   amount
-        // );
-        // return payment;
-
-        // Mock response for now
-        return this._createMockCapture(paymentId, amount);
+        const payment = await this.razorpayInstance.payments.capture(
+          paymentId,
+          amount
+        );
+        return payment;
       } catch (error) {
         console.error("Payment capture failed:", error);
         throw new ApiError(500, `Capture failed: ${error.message}`);

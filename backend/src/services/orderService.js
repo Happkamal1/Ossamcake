@@ -33,7 +33,7 @@ const validateCartAndCalculate = async (userId) => {
   // Load cart with populated cake info
   const cart = await Cart.findOne({ user: userId }).populate(
     "items.cake",
-    "name images slug isActive variants"
+    "name images slug status variants"
   );
 
   if (!cart || cart.items.length === 0) {
@@ -46,7 +46,7 @@ const validateCartAndCalculate = async (userId) => {
       throw new ApiError(400, `Product no longer available`);
     }
 
-    if (!item.cake.isActive) {
+    if (item.cake.status !== "active") {
       throw new ApiError(400, `${item.cake.name} is currently unavailable`);
     }
 
@@ -257,10 +257,12 @@ const updateOrderStatus = async (orderId, status) => {
     "confirmed",
     "preparing",
     "baking",
+    "packed",
     "out_for_delivery",
     "delivered",
     "cancelled",
     "returned",
+    "refunded",
   ];
   if (!validStatuses.includes(status)) {
     throw new ApiError(400, `Invalid status. Must be one of: ${validStatuses.join(", ")}`);

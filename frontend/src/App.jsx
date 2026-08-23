@@ -39,7 +39,8 @@ import AdminReviews from "@/Pages/Admin/AdminReviews";
 import AdminCoupons from "@/Pages/Admin/AdminCoupons";
 import AdminBanners from "@/Pages/Admin/AdminBanners";
 import AdminNotifications from "@/Pages/Admin/AdminNotifications";
-import NotificationDetailsModal from "@/components/notifications/NotificationDetailsModal";
+import NotificationsPage from "@/Pages/Notifications/NotificationsPage";
+import NotificationDetailPage from "@/Pages/Notifications/NotificationDetailPage";
 
 // Layout wrapper for all customer-facing pages (with Header and Footer)
 function CustomerLayout() {
@@ -101,11 +102,14 @@ export default function App() {
             <Route path="/profile/*" element={<ProtectedRoute><ProfilePanel /></ProtectedRoute>} />
             <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
 
+            {/* Notification Center */}
+            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+            <Route path="/notifications/:slug" element={<ProtectedRoute><NotificationDetailPage /></ProtectedRoute>} />
+
             {/* Fallback */}
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
-        <NotificationDetailsModal />
         <Toaster 
           position="bottom-right" 
           richColors 

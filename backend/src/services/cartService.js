@@ -7,7 +7,7 @@ const ApiError = require("../utils/ApiError");
  * Get or create cart for a user
  */
 const getOrCreateCart = async (userId) => {
-  let cart = await Cart.findOne({ user: userId }).populate("items.cake", "name images slug isActive");
+  let cart = await Cart.findOne({ user: userId }).populate("items.cake", "name images slug status");
   if (!cart) {
     cart = await Cart.create({ user: userId, items: [] });
   }

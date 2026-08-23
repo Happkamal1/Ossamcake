@@ -36,7 +36,7 @@ const TARGET_OPTIONS = [
 ];
 
 const EMPTY_FORM = {
-  title: "", shortDescription: "", message: "",
+  title: "", slug: "", shortDescription: "", message: "",
   image: "", relatedProduct: "", relatedOrder: "",
   type: "announcement", priority: "medium",
   targetType: "all", targetRole: "",
@@ -143,6 +143,17 @@ function NotificationModal({ notif, onClose, onSubmit, submitting }) {
             <input value={form.title} onChange={(e) => set("title", e.target.value)}
               placeholder="e.g. 🎉 Weekend Sale — 30% OFF!"
               className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent" />
+          </div>
+
+          {/* Slug */}
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+              Slug <span className="text-slate-400 normal-case font-normal">(auto-generated if empty)</span>
+            </label>
+            <input value={form.slug} onChange={(e) => set("slug", e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""))}
+              placeholder="e.g. weekend-sale-30-off"
+              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent" />
+            <p className="text-[11px] text-slate-400 mt-1">Used in URL: /notifications/<span className="text-indigo-500">{form.slug || "auto-generated"}</span></p>
           </div>
 
           {/* Short Description */}

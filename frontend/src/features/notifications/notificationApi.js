@@ -13,6 +13,8 @@ const ADMIN_API = axios.create({
 // ── User-facing ───────────────────────────────────────────────────────────────
 export const notificationApi = {
   getMyNotifications: (params = {}) => API.get("/", { params }),
+  getById:            (id)           => API.get(`/${id}`),
+  getBySlug:          (slug)         => API.get(`/slug/${slug}`),
   getUnreadCount:     ()             => API.get("/unread-count"),
   markAsRead:         (id)           => API.patch(`/${id}/read`),
   markAllAsRead:      ()             => API.patch("/read-all"),

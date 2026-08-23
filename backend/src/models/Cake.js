@@ -77,6 +77,11 @@ cakeSchema.virtual("image").get(function () {
   return this.thumbnail;
 });
 
+// Virtual: Check if status is active (for backward-compatibility with isActive checks)
+cakeSchema.virtual("isActive").get(function () {
+  return this.status === "active";
+});
+
 // Text index for search
 cakeSchema.index({ name: "text", description: "text" });
 

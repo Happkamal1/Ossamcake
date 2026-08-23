@@ -61,6 +61,30 @@ export const deleteMyNotification = createAsyncThunk(
   }
 );
 
+export const fetchNotificationById = createAsyncThunk(
+  "notifications/fetchById",
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await notificationApi.getById(id);
+      return res.data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Notification not found");
+    }
+  }
+);
+
+export const fetchNotificationBySlug = createAsyncThunk(
+  "notifications/fetchBySlug",
+  async (slug, { rejectWithValue }) => {
+    try {
+      const res = await notificationApi.getBySlug(slug);
+      return res.data.data; // { ...userNotif, notification: { ...notif, relatedProduct, relatedOrder } }
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Notification not found");
+    }
+  }
+);
+
 // ── Admin Thunks ──────────────────────────────────────────────────────────────
 export const fetchAdminNotifications = createAsyncThunk(
   "notifications/fetchAdmin",
@@ -147,6 +171,11 @@ const notificationSlice = createSlice({
     error: null,
     activeNotification: null,
 
+    // Single notification detail (for detail page)
+    currentNotification: null,
+    detailLoading: false,
+    detailError: null,
+
     // Admin notifications
     adminNotifications: [],
     adminPagination: { total: 0, totalPages: 0, page: 1, limit: 15 },
@@ -159,6 +188,10 @@ const notificationSlice = createSlice({
       state.notifications = [];
       state.page = 1;
       state.hasMore = true;
+    },
+    clearCurrentNotification(state) {
+      state.currentNotification = null;
+      state.detailError = null;
     },
     resetAdminError(state) {
       state.adminError = null;
@@ -212,6 +245,41 @@ const notificationSlice = createSlice({
         const item = state.notifications.find((n) => n.notification?._id === id);
         if (item && !item.isRead) state.unreadCount = Math.max(0, state.unreadCount - 1);
         state.notifications = state.notifications.filter((n) => n.notification?._id !== id);
+      });
+
+    // fetchNotificationById (detail page — ObjectId, backward compat)
+    builder
+      .addCase(fetchNotificationById.pending, (state) => {
+        state.detailLoading = true; state.detailError = null; state.currentNotification = null;
+      })
+      .addCase(fetchNotificationById.fulfilled, (state, { payload }) => {
+        state.detailLoading = false;
+        state.currentNotification = payload;
+        // Sync read status in the list if the notification is present
+        const item = state.notifications.find((n) => n.notification?._id === payload.notification?._id);
+        if (item && !item.isRead) {
+          item.isRead = true;
+          state.unreadCount = Math.max(0, state.unreadCount - 1);
+        }
+      })
+      .addCase(fetchNotificationById.rejected, (state, { payload }) => {
+        state.detailLoading = false; state.detailError = payload;
+      });
+
+    // fetchNotificationBySlug (detail page — SEO slug, primary)
+    builder
+      .addCase(fetchNotificationBySlug.pending, (state) => {
+        state.detailLoading = true; state.detailError = null; state.currentNotification = null;
+      })
+      .addCase(fetchNotificationBySlug.fulfilled, (state, { payload }) => {
+        state.detailLoading = false;
+        state.currentNotification = payload;
+        // Sync read status in the notification list
+        const item = state.notifications.find((n) => n.notification?._id === payload.notification?._id);
+        if (item && !item.isRead) { item.isRead = true; state.unreadCount = Math.max(0, state.unreadCount - 1); }
+      })
+      .addCase(fetchNotificationBySlug.rejected, (state, { payload }) => {
+        state.detailLoading = false; state.detailError = payload;
       });
 
     // Admin: fetchAdminNotifications
@@ -281,6 +349,7 @@ const notificationSlice = createSlice({
 
 export const { 
   clearUserNotifications, 
+  clearCurrentNotification,
   resetAdminError, 
   openNotificationModal, 
   closeNotificationModal 

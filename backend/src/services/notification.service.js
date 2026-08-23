@@ -1,12 +1,40 @@
 const Notification = require("../models/Notification");
 const UserNotification = require("../models/UserNotification");
 const User = require("../models/User");
+// Import Cake so Mongoose registers the model before any populate() that references "Cake"
+require("../models/Cake");
+require("../models/Order");
 const ApiError = require("../utils/ApiError");
 
 // ── Future-ready channel imports ───────────────────────────────────────────────
 const socketChannel = require("./notificationChannels/socket.channel");
 const pushChannel   = require("./notificationChannels/push.channel");
 const emailChannel  = require("./notificationChannels/email.channel");
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Safe populate builder
+// Always specify the correct model names ("Cake" not "Product").
+// Only adds a sub-populate entry if the field is non-null, preventing
+// the "Schema hasn't been registered for model 'Product'" crash.
+// ─────────────────────────────────────────────────────────────────────────────
+function buildNotificationPopulate() {
+  return {
+    path: "notification",
+    select: "-targetUsers -updatedBy",
+    populate: [
+      {
+        path: "relatedProduct",
+        model: "Cake",                 // exact registered model name
+        select: "name thumbnail slug basePrice",
+      },
+      {
+        path: "relatedOrder",
+        model: "Order",
+        select: "orderNumber orderStatus createdAt grandTotal",
+      },
+    ],
+  };
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Targeting — resolve which users receive a notification
@@ -38,7 +66,6 @@ async function resolveTargetUsers(notification) {
 
     case "inactive": {
       const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-      // Users who haven't logged in or have old accounts
       return User.find({
         accountStatus: "active",
         updatedAt: { $lte: ninetyDaysAgo },
@@ -52,13 +79,10 @@ async function resolveTargetUsers(notification) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fanout — bulk-insert UserNotification documents for resolved users
-// This is the SINGLE entry point for all notification delivery.
-// Future channels (Socket.io, FCM, Email) are activated here.
 // ─────────────────────────────────────────────────────────────────────────────
 async function fanoutNotification(notification, users) {
   if (!users || users.length === 0) return 0;
 
-  // Build bulk insert documents (upsert to avoid duplicates on re-send)
   const docs = users.map((user) => ({
     updateOne: {
       filter: { user: user._id, notification: notification._id },
@@ -100,13 +124,14 @@ async function getAllNotifications(query = {}) {
   } = query;
 
   const filter = {};
-  if (status)  filter.status = status;
-  if (type)    filter.type = type;
+  if (status)   filter.status = status;
+  if (type)     filter.type = type;
   if (priority) filter.priority = priority;
   if (search) {
     filter.$or = [
-      { title: { $regex: search, $options: "i" } },
+      { title:            { $regex: search, $options: "i" } },
       { shortDescription: { $regex: search, $options: "i" } },
+      { slug:             { $regex: search, $options: "i" } },
     ];
   }
 
@@ -125,8 +150,8 @@ async function getAllNotifications(query = {}) {
     notifications,
     pagination: {
       total,
-      page: Number(page),
-      limit: Number(limit),
+      page:       Number(page),
+      limit:      Number(limit),
       totalPages: Math.ceil(total / Number(limit)),
     },
   };
@@ -140,19 +165,28 @@ async function getNotificationById(id) {
 
 function cleanNotificationData(data) {
   const cleaned = { ...data };
-  if (cleaned.targetRole === "") cleaned.targetRole = null;
-  if (cleaned.buttonText === "") cleaned.buttonText = null;
-  if (cleaned.buttonLink === "") cleaned.buttonLink = null;
-  if (cleaned.image === "") cleaned.image = null;
+  if (cleaned.targetRole     === "") cleaned.targetRole     = null;
+  if (cleaned.buttonText     === "") cleaned.buttonText     = null;
+  if (cleaned.buttonLink     === "") cleaned.buttonLink     = null;
+  if (cleaned.image          === "") cleaned.image          = null;
   if (cleaned.relatedProduct === "") cleaned.relatedProduct = null;
-  if (cleaned.relatedOrder === "") cleaned.relatedOrder = null;
-  if (cleaned.scheduledAt === "") cleaned.scheduledAt = null;
-  if (cleaned.expiresAt === "") cleaned.expiresAt = null;
+  if (cleaned.relatedOrder   === "") cleaned.relatedOrder   = null;
+  if (cleaned.scheduledAt    === "") cleaned.scheduledAt    = null;
+  if (cleaned.expiresAt      === "") cleaned.expiresAt      = null;
   return cleaned;
 }
 
 async function createNotification(data, adminId) {
   const cleaned = cleanNotificationData(data);
+
+  // If admin supplied a custom slug, validate uniqueness
+  if (cleaned.slug) {
+    cleaned.slug = cleaned.slug.toLowerCase().trim().replace(/\s+/g, "-");
+    const exists = await Notification.findOne({ slug: cleaned.slug });
+    if (exists) throw new ApiError(409, `Slug "${cleaned.slug}" is already in use`);
+  }
+  // If no slug supplied, the pre-save hook generates it from title
+
   const notification = await Notification.create({ ...cleaned, createdBy: adminId });
   return notification;
 }
@@ -163,10 +197,10 @@ async function sendNotification(notificationId, adminId) {
   if (notification.status === "expired") throw new ApiError(400, "Cannot send an expired notification");
 
   const users = await resolveTargetUsers(notification);
-  const count = await fanoutNotification(notification, users);
+  const count  = await fanoutNotification(notification, users);
 
-  notification.status = "active";
-  notification.sentAt  = new Date();
+  notification.status    = "active";
+  notification.sentAt    = new Date();
   notification.updatedBy = adminId;
   await notification.save();
 
@@ -175,6 +209,14 @@ async function sendNotification(notificationId, adminId) {
 
 async function updateNotification(id, data, adminId) {
   const cleaned = cleanNotificationData(data);
+
+  // Validate slug uniqueness if admin is changing it
+  if (cleaned.slug) {
+    cleaned.slug = cleaned.slug.toLowerCase().trim().replace(/\s+/g, "-");
+    const exists = await Notification.findOne({ slug: cleaned.slug, _id: { $ne: id } });
+    if (exists) throw new ApiError(409, `Slug "${cleaned.slug}" is already in use`);
+  }
+
   const notification = await Notification.findByIdAndUpdate(
     id,
     { ...cleaned, updatedBy: adminId },
@@ -187,7 +229,6 @@ async function updateNotification(id, data, adminId) {
 async function deleteNotification(id) {
   const notification = await Notification.findByIdAndDelete(id);
   if (!notification) throw new ApiError(404, "Notification not found");
-  // Also clean up all user notification records
   await UserNotification.deleteMany({ notification: id });
   return notification;
 }
@@ -196,12 +237,14 @@ async function duplicateNotification(id, adminId) {
   const original = await Notification.findById(id).lean();
   if (!original) throw new ApiError(404, "Notification not found");
 
-  const { _id, createdAt, updatedAt, sentAt, ...rest } = original;
+  const { _id, slug, createdAt, updatedAt, sentAt, ...rest } = original;
+  // Generate a new unique slug for the copy (pre-save hook will handle it)
   const copy = await Notification.create({
     ...rest,
-    title: `[Copy] ${original.title}`,
-    status: "draft",
-    sentAt: null,
+    title:     `[Copy] ${original.title}`,
+    slug:      undefined,   // let pre-save hook generate
+    status:    "draft",
+    sentAt:    null,
     createdBy: adminId,
   });
   return copy;
@@ -209,7 +252,6 @@ async function duplicateNotification(id, adminId) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Scheduled Notification Dispatcher
-// Called by node-cron in server.js every minute
 // ─────────────────────────────────────────────────────────────────────────────
 async function dispatchScheduledNotifications() {
   const now = new Date();
@@ -230,7 +272,6 @@ async function dispatchScheduledNotifications() {
     }
   }
 
-  // Mark expired notifications
   await Notification.updateMany(
     { status: "active", expiresAt: { $lte: now, $ne: null } },
     { status: "expired" }
@@ -254,32 +295,155 @@ async function getUserNotifications(userId, query = {}) {
       .populate({
         path: "notification",
         match: { status: { $in: ["active"] } },
-        select: "-targetUsers -updatedBy",
+        select: "title slug shortDescription image type priority buttonText buttonLink createdAt sentAt",
       })
       .lean(),
     UserNotification.countDocuments(filter),
     UserNotification.countDocuments({ user: userId, isDeleted: false, isRead: false }),
   ]);
 
-  // Filter out items where notification was deleted or not yet active
   const filtered = items.filter((item) => item.notification !== null);
 
   return {
     notifications: filtered,
     pagination: {
-      total: filtered.length,
-      page: Number(page),
-      limit: Number(limit),
+      total:      filtered.length,
+      page:       Number(page),
+      limit:      Number(limit),
       totalPages: Math.ceil(total / Number(limit)),
     },
     unreadCount,
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// getUserNotificationBySlug
+// Looks up the Notification by its SEO slug, then finds the UserNotification.
+// Uses safe populate with explicit model references — never crashes on missing refs.
+// ─────────────────────────────────────────────────────────────────────────────
+async function getUserNotificationBySlug(userId, slug) {
+  // Step 1: find the master notification by slug
+  const notification = await Notification.findOne({ slug, status: "active" })
+    .select("-targetUsers -updatedBy")
+    .lean();
+
+  if (!notification) throw new ApiError(404, "Notification not found");
+
+  // Step 2: find this user's junction record
+  const userNotif = await UserNotification.findOne({
+    user:         userId,
+    notification: notification._id,
+    isDeleted:    false,
+  }).lean();
+
+  if (!userNotif) throw new ApiError(404, "Notification not found");
+
+  // Step 3: safe populate of relatedProduct (ref: "Cake") — only if field is set
+  let relatedProduct = null;
+  if (notification.relatedProduct) {
+    try {
+      const Cake = require("../models/Cake");
+      relatedProduct = await Cake.findById(notification.relatedProduct)
+        .select("name thumbnail slug basePrice")
+        .lean();
+    } catch (e) {
+      console.warn("[Notification] Could not populate relatedProduct:", e.message);
+    }
+  }
+
+  // Step 4: safe populate of relatedOrder — only if field is set
+  let relatedOrder = null;
+  if (notification.relatedOrder) {
+    try {
+      const Order = require("../models/Order");
+      relatedOrder = await Order.findById(notification.relatedOrder)
+        .select("orderNumber orderStatus createdAt grandTotal")
+        .lean();
+    } catch (e) {
+      console.warn("[Notification] Could not populate relatedOrder:", e.message);
+    }
+  }
+
+  // Step 5: auto-mark as read
+  if (!userNotif.isRead) {
+    await UserNotification.updateOne(
+      { _id: userNotif._id },
+      { isRead: true, readAt: new Date() }
+    );
+    userNotif.isRead = true;
+    userNotif.readAt = new Date();
+  }
+
+  return {
+    ...userNotif,
+    notification: {
+      ...notification,
+      relatedProduct,
+      relatedOrder,
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// getUserNotificationById — kept for backward compat (marks-read on open)
+// ─────────────────────────────────────────────────────────────────────────────
+async function getUserNotificationById(userId, notificationId) {
+  const userNotif = await UserNotification.findOne({
+    user:         userId,
+    notification: notificationId,
+    isDeleted:    false,
+  }).lean();
+
+  if (!userNotif) throw new ApiError(404, "Notification not found");
+
+  const notification = await Notification.findOne({
+    _id:    notificationId,
+    status: "active",
+  }).select("-targetUsers -updatedBy").lean();
+
+  if (!notification) throw new ApiError(404, "Notification not found");
+
+  let relatedProduct = null;
+  if (notification.relatedProduct) {
+    try {
+      const Cake = require("../models/Cake");
+      relatedProduct = await Cake.findById(notification.relatedProduct)
+        .select("name thumbnail slug basePrice").lean();
+    } catch (e) {
+      console.warn("[Notification] relatedProduct populate skipped:", e.message);
+    }
+  }
+
+  let relatedOrder = null;
+  if (notification.relatedOrder) {
+    try {
+      const Order = require("../models/Order");
+      relatedOrder = await Order.findById(notification.relatedOrder)
+        .select("orderNumber orderStatus createdAt grandTotal").lean();
+    } catch (e) {
+      console.warn("[Notification] relatedOrder populate skipped:", e.message);
+    }
+  }
+
+  if (!userNotif.isRead) {
+    await UserNotification.updateOne(
+      { _id: userNotif._id },
+      { isRead: true, readAt: new Date() }
+    );
+    userNotif.isRead = true;
+    userNotif.readAt = new Date();
+  }
+
+  return {
+    ...userNotif,
+    notification: { ...notification, relatedProduct, relatedOrder },
+  };
+}
+
 async function getUnreadCount(userId) {
   return UserNotification.countDocuments({
-    user: userId,
-    isRead: false,
+    user:      userId,
+    isRead:    false,
     isDeleted: false,
   });
 }
@@ -323,6 +487,8 @@ module.exports = {
   dispatchScheduledNotifications,
   // User
   getUserNotifications,
+  getUserNotificationBySlug,
+  getUserNotificationById,
   getUnreadCount,
   markAsRead,
   markAllAsRead,

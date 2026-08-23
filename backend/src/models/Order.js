@@ -71,22 +71,24 @@ const orderSchema = new mongoose.Schema(
         "confirmed",
         "preparing",
         "baking",
+        "packed",
         "out_for_delivery",
         "delivered",
         "cancelled",
-        "returned"
+        "returned",
+        "refunded"
       ],
       default: "pending",
     },
     razorpayOrderId: { type: String, default: "" },
     razorpayPaymentId: { type: String, default: "" },
     razorpaySignature: { type: String, default: "" },
-    
+
     // Payment transaction reference
-    paymentTransaction: { 
-      type: mongoose.Schema.Types.ObjectId, 
+    paymentTransaction: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Payment",
-      default: null 
+      default: null
     },
 
     // Pricing breakdown — mirrors Checkout.jsx calculations
@@ -97,7 +99,7 @@ const orderSchema = new mongoose.Schema(
     grandTotal: { type: Number, required: true },
 
     appliedCoupon: { type: String, default: "" },
-    
+
     // Invoice details
     invoiceNumber: { type: String, unique: true, sparse: true },
     invoiceDate: { type: Date },
@@ -105,13 +107,11 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Auto-generate orderNumber before saving
-orderSchema.pre("save", async function (next) {
+orderSchema.pre("save", function (next) {
   if (!this.orderNumber) {
     const rand = Math.floor(100000 + Math.random() * 900000);
     this.orderNumber = `ORD-${rand}`;
   }
-  next();
 });
 
 module.exports = mongoose.model("Order", orderSchema);

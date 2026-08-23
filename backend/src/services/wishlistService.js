@@ -25,7 +25,7 @@ const getWishlist = async (userId, options = {}) => {
   const skip = (Number(page) - 1) * Number(limit);
 
   // Optimized query: Query Cake collection directly using IDs in wishlist array
-  const cakes = await Cake.find({ _id: { $in: wishlist.cakes }, isActive: true })
+  const cakes = await Cake.find({ _id: { $in: wishlist.cakes }, status: "active" })
     .select("name slug basePrice images rating reviewsCount discount isBestSeller thumbnail")
     .skip(skip)
     .limit(Number(limit))
