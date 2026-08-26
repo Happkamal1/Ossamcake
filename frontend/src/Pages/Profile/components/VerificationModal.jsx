@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { KeyRound, ShieldAlert, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function VerificationModal({ isOpen, onClose, email, onVerified }) {
   const [otp, setOtp] = useState("");
@@ -45,7 +46,7 @@ export default function VerificationModal({ isOpen, onClose, email, onVerified }
   const handleResend = async () => {
     setLoading(true);
     try {
-      await axios.post("http://localhost:5000/api/v1/auth/resend-otp", { email }, { withCredentials: true });
+      await axios.post(`${API_BASE_URL}/auth/resend-otp`, { email }, { withCredentials: true });
       toast.success("Verification code resent to your email.");
       startTimer();
     } catch (err) {
@@ -65,7 +66,7 @@ export default function VerificationModal({ isOpen, onClose, email, onVerified }
     try {
       // Reuses the verification OTP endpoint
       await axios.post(
-        "http://localhost:5000/api/v1/auth/verify-email",
+        `${API_BASE_URL}/auth/verify-email`,
         { email, otp },
         { withCredentials: true }
       );

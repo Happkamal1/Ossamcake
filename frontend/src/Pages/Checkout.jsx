@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import axios from "axios";
+import { API_BASE_URL } from "@/lib/api";
 import {
   CheckCircle2,
   ChevronLeft,
@@ -87,7 +88,7 @@ export default function Checkout() {
   }, []);
 
   const loadAddresses = () => {
-    axios.get("http://localhost:5000/api/v1/users/addresses", { withCredentials: true })
+    axios.get(`${API_BASE_URL}/users/addresses`, { withCredentials: true })
       .then((res) => {
         const addresses = res.data?.data || [];
         setSavedAddresses(addresses);
@@ -149,7 +150,7 @@ export default function Checkout() {
     try {
       if (isEditingAddress && editingAddressId) {
         const res = await axios.patch(
-          `http://localhost:5000/api/v1/users/addresses/${editingAddressId}`,
+          `${API_BASE_URL}/users/addresses/${editingAddressId}`,
           addressForm,
           { withCredentials: true }
         );
@@ -157,7 +158,7 @@ export default function Checkout() {
         setSavedAddresses((prev) => prev.map((a) => (a._id === editingAddressId ? res.data.data : a)));
       } else {
         const res = await axios.post(
-          "http://localhost:5000/api/v1/users/addresses",
+          `${API_BASE_URL}/users/addresses`,
           addressForm,
           { withCredentials: true }
         );
@@ -195,7 +196,7 @@ export default function Checkout() {
     e.stopPropagation();
     if (!confirm("Are you sure you want to delete this address?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/v1/users/addresses/${id}`, { withCredentials: true });
+      await axios.delete(`${API_BASE_URL}/users/addresses/${id}`, { withCredentials: true });
       toast.success("Address deleted successfully!");
       setSavedAddresses((prev) => prev.filter((a) => a._id !== id));
       if (selectedAddressId === id) {
@@ -209,7 +210,7 @@ export default function Checkout() {
   const handleSetDefaultClick = async (id, e) => {
     e.stopPropagation();
     try {
-      await axios.patch(`http://localhost:5000/api/v1/users/addresses/${id}/default`, {}, { withCredentials: true });
+      await axios.patch(`${API_BASE_URL}/users/addresses/${id}/default`, {}, { withCredentials: true });
       toast.success("Default address updated!");
       loadAddresses();
     } catch (err) {
@@ -238,7 +239,7 @@ export default function Checkout() {
     try {
       // 1. Create Pending Order on Backend
       const response = await axios.post(
-        "http://localhost:5000/api/v1/orders",
+        `${API_BASE_URL}/orders`,
         {
           shippingAddress: shipping,
           paymentMethod,
@@ -259,7 +260,7 @@ export default function Checkout() {
       else {
         // 2. Create Razorpay Payment Order on Backend
         const paymentRes = await axios.post(
-          "http://localhost:5000/api/v1/payment/create-order",
+          `${API_BASE_URL}/payment/create-order`,
           {
             orderId: createdOrder.order._id,
           },
@@ -288,7 +289,7 @@ export default function Checkout() {
               setLoading(true);
               // Verify signature on backend
               await axios.post(
-                "http://localhost:5000/api/v1/payment/verify",
+                `${API_BASE_URL}/payment/verify`,
                 {
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { getImageUrl } from "@/lib/api";
 import { useDispatch } from "react-redux";
 import { updateProfile, uploadAvatar } from "@/features/auth/authSlice";
 import { Button } from "@/components/ui/button";
@@ -161,8 +162,8 @@ export default function MyProfile({ user }) {
   };
 
   // Profile avatar formatting
-  const avatarUrl = user.profileImage 
-    ? (user.profileImage.startsWith("http") ? user.profileImage : `http://localhost:5000${user.profileImage}`)
+  const avatarUrl = user.profileImage
+    ? getImageUrl(user.profileImage)
     : null;
 
   return (

@@ -1,12 +1,13 @@
 import axios from "axios";
+import { API_BASE_URL } from "@/lib/api";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api/v1/notifications",
+  baseURL: `${API_BASE_URL}/notifications`,
   withCredentials: true,
 });
 
 const ADMIN_API = axios.create({
-  baseURL: "http://localhost:5000/api/v1/admin/notifications",
+  baseURL: `${API_BASE_URL}/admin/notifications`,
   withCredentials: true,
 });
 

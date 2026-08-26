@@ -3,6 +3,7 @@ import { X, Plus, Trash2, Upload, Image as ImageIcon, Sparkles, Truck, Tag, Hear
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAdminCategories, fetchAdminOccasions, fetchAdminCakeTypes } from "@/features/admin/adminSlice";
 import axios from "axios";
+import { API_BASE_URL } from "@/lib/api";
 import { toast } from "sonner";
 
 const EMPTY = {
@@ -107,7 +108,7 @@ export default function ProductModal({ open, onClose, onSubmit, initial, loading
 
     setUploading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/v1/admin/products/upload", formData, {
+      const res = await axios.post(`${API_BASE_URL}/admin/products/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true
       });

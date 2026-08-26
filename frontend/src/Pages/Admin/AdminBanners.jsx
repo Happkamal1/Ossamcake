@@ -10,11 +10,8 @@ import {
   Sparkles, Check, X, Upload, Loader2, Link2
 } from "lucide-react";
 
-const getImageUrl = (url) => {
-  if (!url) return '';
-  if (url.startsWith('http')) return url;
-  return 'http://localhost:5000' + url;
-};
+import { getImageUrl } from "@/lib/api";
+
 
 export default function AdminBanners() {
   const dispatch = useDispatch();

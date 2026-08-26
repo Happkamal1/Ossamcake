@@ -1,9 +1,10 @@
 import axios from "axios";
+import { API_BASE_URL } from "@/lib/api";
 
-const BASE = "http://localhost:5000/api/v1/banners";
+const BASE = `${API_BASE_URL}/banners`;
 
 export const bannerApi = {
   getHomeBanners: () => axios.get(`${BASE}/home`, { withCredentials: true }),
   getActiveBanners: () => axios.get(BASE, { withCredentials: true }),
-  getHomeHero: () => axios.get("http://localhost:5000/api/v1/home/hero", { withCredentials: true }),
+  getHomeHero: () => axios.get(`${API_BASE_URL}/home/hero`, { withCredentials: true }),
 };

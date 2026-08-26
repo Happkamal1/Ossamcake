@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getImageUrl } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser, fetchAddresses } from "@/features/auth/authSlice";
@@ -137,8 +138,8 @@ export default function ProfilePanel() {
   };
 
   // Avatar path helper
-  const avatarUrl = user.profileImage 
-    ? (user.profileImage.startsWith("http") ? user.profileImage : `http://localhost:5000${user.profileImage}`)
+  const avatarUrl = user.profileImage
+    ? getImageUrl(user.profileImage)
     : null;
 
   return (

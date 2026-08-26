@@ -1,15 +1,14 @@
 import axios from 'axios';
-
-const BASE = 'http://localhost:5000/api/v1';
+import { API_BASE_URL } from '@/lib/api';
 
 const API = axios.create({
-  baseURL: `${BASE}/products`,
+  baseURL: `${API_BASE_URL}/products`,
   withCredentials: true,
 });
 
 // Separate instance for master-data endpoints (categories, occasions, cake-types)
 const META_API = axios.create({
-  baseURL: BASE,
+  baseURL: API_BASE_URL,
   withCredentials: true,
 });
 
@@ -33,4 +32,3 @@ export const metaApi = {
   getOccasions: () => META_API.get('/occasions'),
   getCakeTypes: () => META_API.get('/cake-types'),
 };
-

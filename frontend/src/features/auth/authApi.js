@@ -1,12 +1,13 @@
 import axios from 'axios';
+import { API_BASE_URL } from '@/lib/api';
 
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api/v1/auth',
+  baseURL: `${API_BASE_URL}/auth`,
   withCredentials: true,
 });
 
 const USER_API = axios.create({
-  baseURL: 'http://localhost:5000/api/v1/users',
+  baseURL: `${API_BASE_URL}/users`,
   withCredentials: true,
 });
 
@@ -55,4 +56,3 @@ export const userApi = {
   deleteAddress: (id) => USER_API.delete(`/addresses/${id}`),
   setDefaultAddress: (id) => USER_API.patch(`/addresses/${id}/default`),
 };
-

@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { API_BASE_URL } from '@/lib/api';
 
 const ADMIN_API = axios.create({
-  baseURL: 'http://localhost:5000/api/v1/admin',
+  baseURL: `${API_BASE_URL}/admin`,
   withCredentials: true,
 });
 

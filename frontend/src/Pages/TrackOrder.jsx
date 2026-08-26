@@ -3,6 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import axios from "axios";
+import { API_BASE_URL } from "@/lib/api";
 import { ChevronRight, Search, Clock, ShieldCheck, MapPin, Truck, CheckCircle2, AlertCircle } from "lucide-react";
 
 const TRACKING_STEPS = [
@@ -33,7 +34,7 @@ export default function TrackOrder() {
     setError(null);
 
     // Fetch order from MongoDB public route by orderNumber
-    axios.get(`http://localhost:5000/api/v1/orders/${idParam.trim().toUpperCase()}`)
+    axios.get(`${API_BASE_URL}/orders/${idParam.trim().toUpperCase()}`)
       .then((res) => {
         setActiveOrder(res.data?.data || null);
       })

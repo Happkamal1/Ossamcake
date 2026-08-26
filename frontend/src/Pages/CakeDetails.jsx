@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getImageUrl } from "@/lib/api";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProductBySlug, fetchProductById, clearSelectedProduct } from "@/features/products/productSlice";
@@ -702,7 +703,7 @@ export default function CakeDetails() {
                               <div className="h-9 w-9 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center border border-primary/20 overflow-hidden flex-shrink-0">
                                 {review.user?.profileImage ? (
                                   <img 
-                                    src={review.user.profileImage.startsWith("http") ? review.user.profileImage : `http://localhost:5000${review.user.profileImage}`} 
+                                    src={getImageUrl(review.user.profileImage)} 
                                     alt={review.user?.name} 
                                     className="h-full w-full object-cover" 
                                   />

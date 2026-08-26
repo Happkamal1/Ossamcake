@@ -1,9 +1,8 @@
 import axios from "axios";
-
-const BASE = "http://localhost:5000/api/v1";
+import { API_BASE_URL } from "@/lib/api";
 
 const API = axios.create({
-  baseURL: BASE,
+  baseURL: API_BASE_URL,
   withCredentials: true,
 });
 
