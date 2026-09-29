@@ -1,12 +1,12 @@
 /**
  * Centralized API configuration for OssamCake frontend.
  *
- * Production:  VITE_API_BASE_URL is unset or "/api/v1"  → relative URLs
+ * Production:  VITE_API_BASE_URL="https://ossamcake.duckdns.org/api/v1"
  *              Nginx proxies /api/* to the Express backend.
  *
  * Development: VITE_API_BASE_URL="http://localhost:5000/api/v1"
  *              OR rely on the Vite dev-server proxy in vite.config.js
- *              which forwards /api/* to http://localhost:5000.
+ *              which forwards /api/* to the local backend.
  */
 
 const API_BASE_URL =
@@ -20,7 +20,8 @@ export { API_BASE_URL };
  * Examples:
  *   getImageUrl("/uploads/cake.jpg")
  *     → "/uploads/cake.jpg"           (production – served by Nginx)
- *     → "http://localhost:5000/uploads/cake.jpg"  (dev with full base URL)
+ * 
+ *     → "http://dev-server:5000/uploads/cake.jpg"  (dev with full base URL, or similar)
  *
  *   getImageUrl("https://res.cloudinary.com/…")
  *     → unchanged (already absolute)

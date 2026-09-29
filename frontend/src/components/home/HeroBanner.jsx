@@ -30,7 +30,7 @@ const DynamicIcon = ({ name, className }) => {
 const getImageUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http')) return url;
-  return 'http://localhost:5173' + url;
+  return url;
 };
 
 export default function HeroBanner() {
