@@ -33,12 +33,9 @@ const updateProfile = async (userId, updateData) => {
     const oldImage = user.profileImage;
     user.profileImage = updateData.profileImage;
     if (!updateData.profileImage && oldImage && oldImage.startsWith("/uploads/avatars/")) {
-      const filename = oldImage.replace("/uploads/avatars/", "");
-      const oldFilePath = path.join(__dirname, "../../uploads/avatars", filename);
-      fs.unlink(oldFilePath, (err) => {
-        if (err) {
-          console.error("Failed to delete old avatar file on remove:", err.message);
-        }
+      const storageService = require("../utils/storage.service");
+      storageService.delete(oldImage).catch(err => {
+        console.error("Failed to delete old avatar file on remove:", err.message);
       });
     }
   }
@@ -60,18 +57,17 @@ const updateAvatar = async (userId, file) => {
   const oldImage = user.profileImage;
 
   // Save new avatar path (served statically via /uploads)
-  user.profileImage = `/uploads/avatars/${file.filename}`;
+  user.profileImage = file.url;
   await user.save();
 
   // Delete old local avatar file if it exists and is stored in uploads
   if (oldImage && oldImage.startsWith("/uploads/avatars/")) {
-    const filename = oldImage.replace("/uploads/avatars/", "");
-    const oldFilePath = path.join(__dirname, "../../uploads/avatars", filename);
-    fs.unlink(oldFilePath, (err) => {
-      if (err) {
-        console.error("Failed to delete old avatar file:", err.message);
-      }
-    });
+    const storageService = require("../utils/storage.service");
+    try {
+      await storageService.delete(oldImage);
+    } catch (err) {
+      console.error("Failed to delete old avatar file:", err.message);
+    }
   }
 
   return await User.findById(userId).select("-password -refreshToken -__v");

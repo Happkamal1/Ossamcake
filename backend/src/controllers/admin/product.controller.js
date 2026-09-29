@@ -44,13 +44,11 @@ const uploadImage = asyncHandler(async (req, res) => {
     res.status(400).json({ success: false, message: "No file uploaded" });
     return;
   }
-  const relativePath = req.file.path.replace(/\\/g, "/");
-  const uploadsIndex = relativePath.indexOf("uploads/");
-  const urlPath = uploadsIndex !== -1
-    ? "/" + relativePath.substring(uploadsIndex)
-    : `/uploads/products/${req.file.filename}`;
+  
+  const storageService = require("../../utils/storage.service");
+  const result = await storageService.upload(req.file, "products");
 
-  res.status(200).json(new ApiResponse(200, { url: urlPath }, "Image uploaded successfully"));
+  res.status(200).json(new ApiResponse(200, { url: result.url, publicId: result.publicId }, "Image uploaded successfully"));
 });
 
 module.exports = { getAllProducts, getProductById, createProduct, updateProduct, softDeleteProduct, hardDeleteProduct, toggleFlag, uploadImage };

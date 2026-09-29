@@ -30,7 +30,10 @@ const uploadAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Please upload an avatar image file");
   }
 
-  const profile = await userService.updateAvatar(req.user._id, req.file);
+  const storageService = require("../utils/storage.service");
+  const result = await storageService.upload(req.file, "avatars");
+
+  const profile = await userService.updateAvatar(req.user._id, { url: result.url });
   res.status(200).json(new ApiResponse(200, profile, "Avatar uploaded successfully"));
 });
 

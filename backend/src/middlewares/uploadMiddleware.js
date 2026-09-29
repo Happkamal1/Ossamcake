@@ -11,8 +11,16 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Helper to determine storage
+const getStorage = (diskConfig) => {
+  if (process.env.STORAGE_DRIVER === "s3") {
+    return multer.memoryStorage();
+  }
+  return multer.diskStorage(diskConfig);
+};
+
 // Storage configuration
-const storage = multer.diskStorage({
+const storage = getStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
@@ -52,7 +60,7 @@ if (!fs.existsSync(productUploadDir)) {
 }
 
 // Product Storage configuration
-const productStorage = multer.diskStorage({
+const productStorage = getStorage({
   destination: (req, file, cb) => {
     cb(null, productUploadDir);
   },
@@ -81,7 +89,7 @@ if (!fs.existsSync(bannerUploadDir)) {
 }
 
 // Banner Storage configuration
-const bannerStorage = multer.diskStorage({
+const bannerStorage = getStorage({
   destination: (req, file, cb) => {
     cb(null, bannerUploadDir);
   },

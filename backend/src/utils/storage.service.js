@@ -65,19 +65,54 @@ class LocalStorageService extends StorageService {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AWS S3 (future — activate by setting STORAGE_DRIVER=s3 in .env)
+// AWS S3
 // ─────────────────────────────────────────────────────────────────────────────
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
+
 class S3StorageService extends StorageService {
+  constructor() {
+    super();
+    // In production EC2 with an IAM role attached, you do not need to supply AWS access keys.
+    // The AWS SDK will automatically fetch temporary credentials from the EC2 instance metadata.
+    this.s3Client = new S3Client({ region: process.env.AWS_REGION });
+    this.bucketName = process.env.S3_BUCKET_NAME;
+  }
+
   async upload(file, folder = "general") {
-    // TODO: Implement using @aws-sdk/client-s3 when ready
-    // const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-    // const client = new S3Client({ region: process.env.AWS_REGION });
-    // ...
-    throw new Error("S3StorageService is not yet implemented. Set STORAGE_DRIVER=local.");
+    if (!file.buffer) {
+      throw new Error("S3StorageService requires file.buffer. Make sure memoryStorage is used.");
+    }
+    
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    const filename = `${uniqueSuffix}${ext}`;
+    const key = `${folder}/${filename}`;
+
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    });
+
+    await this.s3Client.send(command);
+
+    // Format matches standard AWS S3 URL format
+    const url = `https://${this.bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+    return {
+      url,
+      publicId: key,
+    };
   }
 
   async delete(publicId) {
-    throw new Error("S3StorageService is not yet implemented.");
+    const command = new DeleteObjectCommand({
+      Bucket: this.bucketName,
+      Key: publicId,
+    });
+
+    await this.s3Client.send(command);
   }
 }
 
