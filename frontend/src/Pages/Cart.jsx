@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { Button } from "@/components/ui/button";
@@ -20,11 +21,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { getImageUrl } from "@/lib/api";
 
 const CROSS_SELLS = [
-  { id: "64b0f1a9d8a3f8c8b1234812", name: "Premium Metallic Birthday Candles (12 Pack)", price: 150, image: "/images/cakes/custom-birthday.jpg" },
-  { id: "64b0f1a9d8a3f8c8b1234813", name: "3D Pop-Up Love Greeting Card", price: 250, image: "/images/cakes/red-velvet.jpg" },
-  { id: "64b0f1a9d8a3f8c8b1234814", name: "Eco-Friendly Premium Wooden Cake Knife", price: 80, image: "/images/cakes/vanilla-bean.jpg" }
+  { id: "64b0f1a9d8a3f8c8b1234812", name: "Premium Metallic Birthday Candles (12 Pack)", price: 150, image: "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/custom-birthday.jpg" },
+  { id: "64b0f1a9d8a3f8c8b1234813", name: "3D Pop-Up Love Greeting Card", price: 250, image: "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/red-velvet.jpg" },
+  { id: "64b0f1a9d8a3f8c8b1234814", name: "Eco-Friendly Premium Wooden Cake Knife", price: 80, image: "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/vanilla-bean.jpg" }
 ];
 
 export default function Cart() {
@@ -39,6 +41,7 @@ export default function Cart() {
     subtotal,
     discountAmount,
     deliveryCharge,
+    taxAmount,
     grandTotal,
     addToCart
   } = useCart();
@@ -95,16 +98,14 @@ export default function Cart() {
     toast.success(`${item.name} added to your cart!`);
   };
 
+  const { settings } = useSelector((state) => state.siteSettings);
+
   // Free shipping logic details
-  const freeShippingThreshold = 800; // Updated free delivery threshold for premium INR feel
+  const freeShippingThreshold = settings?.shipping?.freeShippingThreshold ?? 800; // Dynamic free delivery threshold
   const currentSubtotal = subtotal;
   const isFreeDelivery = currentSubtotal >= freeShippingThreshold;
   const progressPercent = Math.min(100, (currentSubtotal / freeShippingThreshold) * 100);
-  const remainingForFree = freeShippingThreshold - currentSubtotal;
-
-  const cartDeliveryCharge = isFreeDelivery ? 0 : 99; // ₹99 delivery charge
-  const estimatedTax = subtotal * 0.05; // 5% GST
-  const finalGrandTotal = Math.max(0, subtotal - discountAmount + cartDeliveryCharge + estimatedTax);
+  const remainingForFree = Math.max(0, freeShippingThreshold - currentSubtotal);
 
   if (cartItems.length === 0) {
     return (
@@ -206,7 +207,7 @@ export default function Cart() {
                       {/* Left: Product Thumbnail & Meta */}
                       <div className="flex items-center gap-4 w-full sm:w-auto">
                         <div className="h-24 w-24 rounded-2xl overflow-hidden shrink-0 border border-border shadow-sm bg-secondary relative">
-                          <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                          <img src={getImageUrl(item.image)} alt={item.name} className="h-full w-full object-cover" />
                           {item.discount > 0 && (
                             <span className="absolute top-2 left-2 bg-pink-600 text-white font-black text-[9px] px-2 py-0.5 rounded-md">
                               {item.discount}% OFF
@@ -324,7 +325,7 @@ export default function Cart() {
                 {CROSS_SELLS.map((item) => (
                   <div key={item.id} className="p-4 rounded-2xl bg-secondary/35 border border-border flex flex-col justify-between items-center text-center space-y-3 hover:shadow-md transition">
                     <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-white shadow bg-card">
-                      <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                      <img src={getImageUrl(item.image)} alt={item.name} className="h-full w-full object-cover" />
                     </div>
                     <div className="space-y-1">
                       <h4 className="font-bold text-foreground text-xs line-clamp-1">{item.name}</h4>
@@ -400,13 +401,13 @@ export default function Cart() {
                 <div className="flex justify-between">
                   <span>Estimated Delivery Charge</span>
                   <span className="font-bold text-foreground">
-                    {cartDeliveryCharge === 0 ? <strong className="text-green-600 font-black">FREE</strong> : `₹${cartDeliveryCharge.toFixed(2)}`}
+                    {deliveryCharge === 0 ? <strong className="text-green-600 font-black">FREE</strong> : `₹${deliveryCharge.toFixed(2)}`}
                   </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span>GST / Taxes (5%)</span>
-                  <span className="font-bold text-foreground">₹{estimatedTax.toFixed(2)}</span>
+                  <span className="font-bold text-foreground">₹{taxAmount.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -414,7 +415,7 @@ export default function Cart() {
 
               <div className="flex justify-between text-lg font-black text-foreground">
                 <span>To Pay</span>
-                <span className="text-pink-600 text-xl font-black">₹{finalGrandTotal.toFixed(2)}</span>
+                <span className="text-pink-600 text-xl font-black">₹{grandTotal.toFixed(2)}</span>
               </div>
 
               <div className="bg-secondary/40 p-4 rounded-2xl border border-border/60 text-xs text-muted-foreground leading-normal flex items-start gap-2">

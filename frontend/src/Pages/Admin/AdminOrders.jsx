@@ -95,24 +95,69 @@ export default function AdminOrders() {
                     </td>
                   </tr>
                   {expandedId === order._id && (
-                    <tr key={`${order._id}-expand`} className="bg-slate-50">
-                      <td colSpan={8} className="px-5 py-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <tr key={`${order._id}-expand`} className="bg-slate-50/80 border-b border-slate-200">
+                      <td colSpan={8} className="px-5 py-5">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           <div>
-                            <p className="text-xs font-bold text-slate-600 mb-2">Order Items</p>
-                            {order.items?.map((item, i) => (
-                              <div key={i} className="flex justify-between text-sm py-1.5 border-b border-slate-100">
-                                <span className="text-slate-700">{item.name} × {item.quantity}</span>
-                                <span className="font-semibold text-slate-800">₹{(item.unitPrice * item.quantity).toLocaleString()}</span>
-                              </div>
-                            ))}
+                            <p className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">Order Items</p>
+                            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                              {order.items?.map((item, i) => (
+                                <div key={i} className="flex justify-between text-xs py-1 border-b border-slate-200/60">
+                                  <span className="text-slate-700 font-medium">{item.name} × {item.quantity}</span>
+                                  <span className="font-bold text-slate-800">₹{(item.unitPrice * item.quantity).toLocaleString()}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
+
                           <div>
-                            <p className="text-xs font-bold text-slate-600 mb-2">Shipping Address</p>
-                            <p className="text-sm text-slate-700">{order.shippingAddress?.name}</p>
-                            <p className="text-sm text-slate-500">{order.shippingAddress?.street}, {order.shippingAddress?.city}</p>
-                            <p className="text-sm text-slate-500">{order.shippingAddress?.state} - {order.shippingAddress?.zip}</p>
-                            <p className="text-sm text-slate-500 mt-1">📞 {order.shippingAddress?.phone}</p>
+                            <p className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">Shipping Address</p>
+                            <div className="text-xs space-y-0.5 text-slate-600">
+                              <p className="font-bold text-slate-800">{order.shippingAddress?.name}</p>
+                              <p>{order.shippingAddress?.street}, {order.shippingAddress?.city}</p>
+                              <p>{order.shippingAddress?.state} - {order.shippingAddress?.zip}</p>
+                              <p className="font-semibold text-slate-700 mt-1">📞 {order.shippingAddress?.phone}</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-xs space-y-2">
+                            <p className="text-xs font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1 flex justify-between items-center">
+                              <span>Payment Details</span>
+                              <span className="text-[10px] font-bold text-pink-600 uppercase bg-pink-50 px-2 py-0.5 rounded border border-pink-150">
+                                {order.paymentProvider || (order.paymentMethod === "cod" ? "cod" : "razorpay")}
+                              </span>
+                            </p>
+                            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px]">
+                              <span className="text-slate-400 font-medium">Provider:</span>
+                              <span className="font-bold text-slate-800 capitalize">
+                                {order.paymentProvider === "stripe" ? "Stripe" : order.paymentProvider === "razorpay" || order.paymentMethod === "card" ? "Razorpay" : "Cash on Delivery"}
+                              </span>
+
+                              <span className="text-slate-400 font-medium">Payment ID:</span>
+                              <span className="font-mono text-[10px] text-slate-700 truncate select-all" title={order.razorpayPaymentId || order.stripePaymentIntentId || order.razorpayOrderId || "N/A"}>
+                                {order.razorpayPaymentId || order.stripePaymentIntentId || order.razorpayOrderId || "N/A"}
+                              </span>
+
+                              <span className="text-slate-400 font-medium">Method:</span>
+                              <span className="font-semibold text-slate-700 capitalize">
+                                {order.paymentTransaction?.method || order.paymentMethod || "Online"}
+                              </span>
+
+                              <span className="text-slate-400 font-medium">Payment Status:</span>
+                              <span><StatusBadge status={order.paymentStatus} /></span>
+
+                              <span className="text-slate-400 font-medium">Amount:</span>
+                              <span className="font-bold text-slate-900">₹{order.grandTotal?.toLocaleString()} INR</span>
+
+                              {order.paymentTransaction?.paidAt && (
+                                <>
+                                  <span className="text-slate-400 font-medium">Paid At:</span>
+                                  <span className="font-semibold text-slate-700">
+                                    {new Date(order.paymentTransaction.paidAt).toLocaleString("en-IN")}
+                                  </span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>

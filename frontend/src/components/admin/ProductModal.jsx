@@ -3,7 +3,7 @@ import { X, Plus, Trash2, Upload, Image as ImageIcon, Sparkles, Truck, Tag, Hear
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAdminCategories, fetchAdminOccasions, fetchAdminCakeTypes } from "@/features/admin/adminSlice";
 import axios from "axios";
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, getImageUrl } from "@/lib/api";
 import { toast } from "sonner";
 
 const EMPTY = {
@@ -163,10 +163,28 @@ export default function ProductModal({ open, onClose, onSubmit, initial, loading
     setForm(f => ({ ...f, gallery: f.gallery.filter((_, i) => i !== index) }));
   };
 
+  // Compute which tabs have validation issues (for red dot indicators)
+  const tabErrors = {
+    basic: !form.name.trim() || !form.description.trim() || !form.basePrice,
+    variants: form.variants.length === 0 || form.variants.some(v => !v.flavor?.trim() || !v.size?.trim() || !v.price),
+    images: false, // thumbnail is optional
+    customization: false,
+    seo: false,
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Check basic info first
+    if (!form.name.trim() || !form.description.trim() || !form.basePrice) {
+      toast.error("Please fill in all required Basic Info fields (name, description, base price)");
+      setActiveTab("basic");
+      return;
+    }
+
     if (form.variants.length === 0) {
-      toast.error("At least one variant is required");
+      toast.error("At least one variant is required — switch to the Variants tab to add one");
+      setActiveTab("variants");
       return;
     }
     
@@ -175,12 +193,15 @@ export default function ProductModal({ open, onClose, onSubmit, initial, loading
       const v = form.variants[i];
       if (!v.flavor.trim() || !v.size.trim() || !v.price) {
         toast.error(`Variant #${i + 1} has incomplete fields (flavor, weight/size, and price are required)`);
+        setActiveTab("variants");
         return;
       }
     }
 
+    // Build clean payload — strip frontend-only fields like seoKeywordsText
+    const { seoKeywordsText, ...formWithoutExtras } = form;
     const payload = {
-      ...form,
+      ...formWithoutExtras,
       basePrice: parseFloat(form.basePrice) || 0,
       discount: parseFloat(form.discount) || 0,
       egglessPremium: parseFloat(form.egglessPremium) || 0,
@@ -196,8 +217,8 @@ export default function ProductModal({ open, onClose, onSubmit, initial, loading
       seo: {
         metaTitle: form.seo?.metaTitle?.trim() || form.name.trim(),
         metaDescription: form.seo?.metaDescription?.trim() || form.description.substring(0, 150).trim(),
-        keywords: form.seoKeywordsText
-          ? form.seoKeywordsText.split(",").map(k => k.trim()).filter(Boolean)
+        keywords: seoKeywordsText
+          ? seoKeywordsText.split(",").map(k => k.trim()).filter(Boolean)
           : []
       }
     };
@@ -237,6 +258,9 @@ export default function ProductModal({ open, onClose, onSubmit, initial, loading
             >
               <tab.icon size={13} />
               {tab.label}
+              {tabErrors[tab.id] && (
+                <span className="ml-1 w-2 h-2 rounded-full bg-red-500 inline-block animate-pulse" title="This tab has missing required fields" />
+              )}
             </button>
           ))}
         </div>
@@ -518,7 +542,7 @@ export default function ProductModal({ open, onClose, onSubmit, initial, loading
                       value={form.thumbnail}
                       onChange={e => set("thumbnail", e.target.value)}
                       className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
-                      placeholder="Enter absolute URL path or upload a file (e.g. /images/cakes/chocolate.jpg)"
+                      placeholder="Enter image URL or upload a file (e.g. https://...)"
                     />
                     <label className="flex items-center gap-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-semibold text-sm cursor-pointer transition-colors border border-slate-200 whitespace-nowrap">
                       <Upload size={15} />
@@ -539,7 +563,7 @@ export default function ProductModal({ open, onClose, onSubmit, initial, loading
                 <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50 flex flex-col items-center justify-center min-h-[140px]">
                   {form.thumbnail ? (
                     <div className="relative group rounded-xl overflow-hidden shadow-sm border border-slate-200">
-                      <img src={form.thumbnail} alt="Thumbnail preview" className="max-h-24 max-w-full object-contain" />
+                      <img src={getImageUrl(form.thumbnail)} alt="Thumbnail preview" className="max-h-24 max-w-full object-contain" />
                       <button
                         type="button"
                         onClick={() => set("thumbnail", "")}
@@ -595,7 +619,7 @@ export default function ProductModal({ open, onClose, onSubmit, initial, loading
                 <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
                   {form.gallery.map((url, index) => (
                     <div key={index} className="relative group border border-slate-200 rounded-xl overflow-hidden aspect-square bg-slate-50 flex items-center justify-center p-2 shadow-sm">
-                      <img src={url} alt={`Gallery ${index}`} className="max-h-full max-w-full object-contain" />
+                      <img src={getImageUrl(url)} alt={`Gallery ${index}`} className="max-h-full max-w-full object-contain" />
                       <button
                         type="button"
                         onClick={() => handleRemoveGalleryUrl(index)}

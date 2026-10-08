@@ -7,34 +7,89 @@ const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const logger = require("./config/logger");
 const errorHandler = require("./middlewares/errorHandler.middleware");
+const mongoSanitize = require("express-mongo-sanitize");
+const xss = require("xss-clean");
 const { apiLimiter, authLimiter, adminLimiter } = require("./middlewares/rateLimiter.middleware");
 
 // Create Express app
 const app = express();
 
+// ── Trust Proxy ──────────────────────────────────────────────────────────────
+// Trust the immediate first hop (Nginx reverse proxy on AWS EC2).
+// Setting to 1 ensures express-rate-limit and req.ip accurately reflect the real
+// client IP while preventing X-Forwarded-For header spoofing bypasses.
+const trustProxySetting = process.env.TRUST_PROXY
+  ? (process.env.TRUST_PROXY === "true" ? true : isNaN(Number(process.env.TRUST_PROXY)) ? process.env.TRUST_PROXY : Number(process.env.TRUST_PROXY))
+  : 1;
+app.set("trust proxy", trustProxySetting);
+
 // ── Core Middlewares ─────────────────────────────────────────────────────────
-app.use(express.json({ limit: "10mb" }));
+app.use(
+  express.json({
+    limit: "10mb",
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+// ── CORS ─────────────────────────────────────────────────────────────────────
+const allowedOrigins = (process.env.FRONTEND_URL || "").split(",").map(o => o.trim()).filter(Boolean);
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Development mode
+      if (process.env.NODE_ENV !== "production") {
+        if (
+          !origin || 
+          origin.startsWith("http://localhost") || 
+          origin.startsWith("http://127.0.0.1") || 
+          allowedOrigins.includes(origin)
+        ) {
+          return callback(null, true);
+        }
+        return callback(new Error(`CORS: Origin ${origin} not allowed in development`));
+      }
+
+      // Production mode
+      if (origin && allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      callback(new Error(`CORS: Origin ${origin} not allowed by production security policy`));
+    },
+    credentials: true,
+  })
+);
+
 app.use(cookieParser());
 app.use(compression());
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
   })
 );
 
-// ── CORS ─────────────────────────────────────────────────────────────────────
-const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:3000").split(",");
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, Postman)
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-      callback(new Error(`CORS: Origin ${origin} not allowed`));
-    },
-    credentials: true,
-  })
-);
+// ── Sanitization Middleware Workaround for Express 5 ──────────────────────
+// Express 5 defines req.query as a getter. This breaks middlewares like
+// xss-clean and express-mongo-sanitize that attempt to reassign req.query.
+app.use((req, res, next) => {
+  const query = req.query;
+  Object.defineProperty(req, "query", {
+    value: query,
+    configurable: true,
+    writable: true,
+    enumerable: true,
+  });
+  next();
+});
+
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// Data sanitization against XSS
+app.use(xss());
 
 // ── HTTP Request Logging ──────────────────────────────────────────────────────
 // Development: colorized dev format to console
@@ -92,10 +147,16 @@ app.use("/api/v1/cart", require("./routes/cart.routes"));
 app.use("/api/v1/orders", require("./routes/order.routes"));
 app.use("/api/v1/wishlist", require("./routes/wishlist.routes"));
 app.use("/api/v1/payment", require("./routes/paymentRoutes"));
+app.use("/api/v1/payments", require("./routes/paymentRoutes")); // plural alias
 app.use("/api/v1/reviews", require("./routes/reviewRoutes"));
 
 // Notifications (user-facing: my notifications, unread count, mark-read)
 app.use("/api/v1/notifications", require("./routes/notification.routes"));
+
+// Public Dynamic Content & Site Settings
+app.use("/api/v1/faqs", apiLimiter, require("./routes/faq.routes"));
+app.use("/api/v1/testimonials", apiLimiter, require("./routes/testimonial.routes"));
+app.use("/api/v1/settings", apiLimiter, require("./routes/siteSettings.routes"));
 
 // Admin Panel — all routes protected by protect + authorize(admin, super_admin) in the router
 app.use("/api/v1/admin", adminLimiter, require("./routes/admin/index"));

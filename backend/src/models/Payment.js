@@ -20,11 +20,30 @@ const paymentSchema = new mongoose.Schema(
       index: true,
     },
 
+    // Provider (razorpay | stripe | cod)
+    provider: {
+      type: String,
+      enum: ["razorpay", "stripe", "cod"],
+      default: "razorpay",
+      index: true,
+    },
+
+    // Provider-agnostic identifiers
+    providerPaymentId: {
+      type: String,
+      default: "",
+      index: true,
+    },
+    providerOrderId: {
+      type: String,
+      default: "",
+      index: true,
+    },
+
     // Razorpay identifiers
     razorpayOrderId: {
       type: String,
-      required: true,
-      unique: true,
+      sparse: true,
       index: true,
     },
     razorpayPaymentId: {
@@ -33,6 +52,21 @@ const paymentSchema = new mongoose.Schema(
       index: true,
     },
     razorpaySignature: {
+      type: String,
+      default: "",
+    },
+
+    // Stripe identifiers
+    stripePaymentIntentId: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
+    stripeClientSecret: {
+      type: String,
+      default: "",
+    },
+    stripeCustomerId: {
       type: String,
       default: "",
     },
@@ -49,17 +83,21 @@ const paymentSchema = new mongoose.Schema(
     },
     receipt: {
       type: String,
-      required: true, // Order number for reference
+      default: "", // Order number for reference
     },
 
     // Payment status tracking
     status: {
       type: String,
       enum: [
-        "created",      // Payment order created
+        "created",      // Payment order created / intent created
+        "requires_payment_method",
+        "requires_action",
+        "processing",   // Payment processing (Stripe / Razorpay)
         "attempted",    // User opened payment modal
         "authorized",   // Payment authorized but not captured
-        "captured",     // Payment successful
+        "captured",     // Payment successful / succeeded
+        "succeeded",    // Stripe succeeded alias
         "failed",       // Payment failed
         "refunded",     // Payment refunded
         "cancelled",    // Payment cancelled by user
@@ -68,10 +106,9 @@ const paymentSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Payment method used (from Razorpay response)
+    // Payment method used (from Razorpay/Stripe response)
     method: {
       type: String,
-      enum: ["card", "netbanking", "wallet", "upi", "emi", "cardless_emi", "paylater", "cod"],
       default: null,
     },
 
@@ -85,6 +122,12 @@ const paymentSchema = new mongoose.Schema(
       contact: String,
       cardNetwork: String, // Visa, Mastercard, etc.
       cardType: String, // credit, debit
+      brand: String,
+      last4: String,
+      expMonth: Number,
+      expYear: Number,
+      funding: String,
+      country: String,
     },
 
     // Error tracking for failed payments
@@ -100,10 +143,17 @@ const paymentSchema = new mongoose.Schema(
       default: false,
     },
     verifiedAt: Date,
+    paidAt: Date,
+    isStockReduced: {
+      type: Boolean,
+      default: false,
+    },
 
     // Refund details (if applicable)
     refund: {
+      refundId: String,
       razorpayRefundId: String,
+      stripeRefundId: String,
       amount: Number,
       status: String,
       reason: String,
@@ -115,6 +165,10 @@ const paymentSchema = new mongoose.Schema(
     webhookReceived: {
       type: Boolean,
       default: false,
+    },
+    webhookEventId: {
+      type: String,
+      default: "",
     },
     webhookData: {
       type: mongoose.Schema.Types.Mixed,
@@ -146,6 +200,7 @@ const paymentSchema = new mongoose.Schema(
 paymentSchema.index({ createdAt: -1 });
 paymentSchema.index({ user: 1, createdAt: -1 });
 paymentSchema.index({ status: 1, createdAt: -1 });
+paymentSchema.index({ provider: 1, status: 1 });
 
 // Virtual for formatted amount
 paymentSchema.virtual("formattedAmount").get(function () {
@@ -154,7 +209,7 @@ paymentSchema.virtual("formattedAmount").get(function () {
 
 // Instance method to check if payment is successful
 paymentSchema.methods.isSuccessful = function () {
-  return this.status === "captured" && this.signatureVerified;
+  return ["captured", "succeeded"].includes(this.status) && (this.signatureVerified || this.provider === "stripe");
 };
 
 // Instance method to check if payment can be retried

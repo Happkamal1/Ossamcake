@@ -21,6 +21,7 @@ export const productsApi = {
   create: (data) => ADMIN_API.post('/products', data),
   update: (id, data) => ADMIN_API.put(`/products/${id}`, data),
   toggleFlag: (id, flag, value) => ADMIN_API.patch(`/products/${id}/toggle-flag`, { flag, value }),
+  toggleStatus: (id, status) => ADMIN_API.patch(`/products/${id}/toggle-status`, { status }),
   softDelete: (id) => ADMIN_API.delete(`/products/${id}`),
   hardDelete: (id) => ADMIN_API.delete(`/products/${id}/permanent`),
 };
@@ -94,4 +95,28 @@ export const bannersApi = {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
   deleteImage: (publicId) => ADMIN_API.delete(`/banners/image/${encodeURIComponent(publicId)}`),
+};
+
+// ─── FAQs ────────────────────────────────────────────────────────────────────
+export const faqsAdminApi = {
+  getAll: (params = {}) => ADMIN_API.get('/faqs', { params }),
+  create: (data) => ADMIN_API.post('/faqs', data),
+  update: (id, data) => ADMIN_API.put(`/faqs/${id}`, data),
+  delete: (id) => ADMIN_API.delete(`/faqs/${id}`),
+  toggleStatus: (id) => ADMIN_API.patch(`/faqs/${id}/toggle-status`),
+};
+
+// ─── Testimonials ────────────────────────────────────────────────────────────
+export const testimonialsAdminApi = {
+  getAll: (params = {}) => ADMIN_API.get('/testimonials', { params }),
+  create: (data) => ADMIN_API.post('/testimonials', data),
+  update: (id, data) => ADMIN_API.put(`/testimonials/${id}`, data),
+  delete: (id) => ADMIN_API.delete(`/testimonials/${id}`),
+  toggleStatus: (id) => ADMIN_API.patch(`/testimonials/${id}/toggle-status`),
+};
+
+// ─── Site Settings ───────────────────────────────────────────────────────────
+export const siteSettingsAdminApi = {
+  getSettings: () => ADMIN_API.get('/settings'),
+  updateSettings: (data) => ADMIN_API.put('/settings', data),
 };

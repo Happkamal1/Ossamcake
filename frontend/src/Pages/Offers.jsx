@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Gift, Percent, Copy, Check, Sparkles, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/api";
 
 const COUPONS = [
   { code: "WELCOME10", discount: "10% OFF", desc: "Enjoy 10% discount on your first order. Minimum order value $30.", validity: "Valid for all new users" },
@@ -16,14 +17,14 @@ const COMBOS = [
     price: "$45.99",
     oldPrice: "$52.99",
     desc: "Order 1kg Chocolate Fudge cake and receive a set of premium birthday candles and metallic party caps free.",
-    image: "/images/cakes/chocolate-fudge.jpg"
+    image: "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/chocolate-fudge.jpg"
   },
   {
     title: "Royal Red Velvet & Rose Gift Set",
     price: "$55.00",
     oldPrice: "$65.00",
     desc: "Combine our signature Red Velvet Cake with a customized greeting card and fresh floral wrapping.",
-    image: "/images/cakes/red-velvet.jpg"
+    image: "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/red-velvet.jpg"
   }
 ];
 
@@ -104,7 +105,7 @@ export default function Offers() {
                 className="bg-card rounded-3xl p-6 border border-border shadow-sm text-left grid grid-cols-1 sm:grid-cols-3 gap-6 items-center"
               >
                 <div className="aspect-square rounded-2xl overflow-hidden bg-secondary border border-border">
-                  <img src={combo.image} alt={combo.title} className="h-full w-full object-cover" />
+                  <img src={getImageUrl(combo.image)} alt={combo.title} className="h-full w-full object-cover" />
                 </div>
                 <div className="sm:col-span-2 space-y-4 flex flex-col justify-between h-full">
                   <div className="space-y-2">

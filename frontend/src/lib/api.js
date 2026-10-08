@@ -28,18 +28,21 @@ export { API_BASE_URL };
  *
  *   getImageUrl(null) → ""
  */
-export function getImageUrl(path) {
-  if (!path) return "";
-  if (path.startsWith("http")) return path;
+export function getImageUrl(path, fallback = "") {
+  if (!path) return fallback;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+
+  // Static assets from frontend /public folder should remain relative
+  if (path.startsWith("/images/") || path.startsWith("/assets/")) {
+    return path;
+  }
 
   // When API_BASE_URL is a full URL (local dev), prepend the backend origin
-  // so that images served by Express (e.g. /uploads/…) resolve correctly.
-  if (API_BASE_URL.startsWith("http")) {
+  // for backend-served files (e.g. /uploads/…)
+  if (API_BASE_URL.startsWith("http") && path.startsWith("/uploads/")) {
     const origin = new URL(API_BASE_URL).origin;
     return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
   }
 
-  // Production: path is already relative (e.g. "/uploads/cake.jpg"),
-  // Nginx will serve it from the same domain.
   return path.startsWith("/") ? path : `/${path}`;
 }

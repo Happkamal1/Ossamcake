@@ -5,6 +5,35 @@ const generateOTP = require("../utils/generateOtp");
 const sendEmail = require("../utils/sendEmail");
 const bcrypt = require("bcryptjs");
 
+const checkOtpCooldown = async (email, type) => {
+  const latestOtp = await OTP.findOne({ email, type }).sort({ createdAt: -1 });
+  if (latestOtp) {
+    const timeDiff = Date.now() - new Date(latestOtp.createdAt).getTime();
+    if (timeDiff < 60000) { // 60 seconds cooldown
+      throw new ApiError(429, `Please wait ${Math.ceil((60000 - timeDiff) / 1000)} seconds before requesting another OTP`);
+    }
+  }
+};
+
+const validateOtpWithAttempts = async (email, otp, type) => {
+  const otpRecord = await OTP.findOne({ email, type });
+  if (!otpRecord) {
+    throw new ApiError(400, "Invalid or expired OTP");
+  }
+
+  if (otpRecord.otp !== otp) {
+    otpRecord.attempts = (otpRecord.attempts || 0) + 1;
+    if (otpRecord.attempts >= 5) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      throw new ApiError(429, "Too many failed attempts. OTP has been invalidated. Please request a new one.");
+    }
+    await otpRecord.save();
+    throw new ApiError(400, `Invalid OTP. ${5 - otpRecord.attempts} attempts remaining.`);
+  }
+
+  return otpRecord;
+};
+
 /**
  * Register a new user and send OTP
  */
@@ -32,6 +61,9 @@ const registerUser = async (userData) => {
 
   // Generate OTP
   const otp = generateOTP();
+
+  await checkOtpCooldown(email, "emailVerification");
+  await OTP.deleteMany({ email, type: "emailVerification" });
 
   // Save OTP in DB
   await OTP.create({
@@ -61,10 +93,7 @@ const registerUser = async (userData) => {
  * Verify Email using OTP
  */
 const verifyEmail = async (email, otp) => {
-  const otpRecord = await OTP.findOne({ email, otp, type: "emailVerification" });
-  if (!otpRecord) {
-    throw new ApiError(400, "Invalid or expired OTP");
-  }
+  const otpRecord = await validateOtpWithAttempts(email, otp, "emailVerification");
 
   const user = await User.findOne({ email });
   if (!user) {
@@ -91,6 +120,8 @@ const resendOtp = async (email, type = "emailVerification") => {
   if (type === "emailVerification" && user.isEmailVerified) {
     throw new ApiError(400, "Email is already verified");
   }
+
+  await checkOtpCooldown(email, type);
 
   // Delete any existing OTPs of this type for this email
   await OTP.deleteMany({ email, type });
@@ -156,6 +187,7 @@ const loginUser = async (email, password) => {
 
   // 2FA check
   if (user.is2FAEnabled) {
+    await checkOtpCooldown(email, "login2FA");
     const otp = generateOTP();
     await OTP.deleteMany({ email, type: "login2FA" });
     await OTP.create({ email, otp, type: "login2FA" });
@@ -176,11 +208,16 @@ const loginUser = async (email, password) => {
 
   // Generate tokens
   const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  // Save refresh token to user
+  user.refreshToken = refreshToken;
+  await user.save();
 
   // Return user without password and the token
   const loggedInUser = await User.findById(user._id).select("-password");
 
-  return { user: loggedInUser, accessToken };
+  return { user: loggedInUser, accessToken, refreshToken };
 };
 
 /**
@@ -224,9 +261,14 @@ const loginWithSocial = async (provider, providerId, email, name, avatar) => {
   }
 
   const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+  await user.save();
+
   const loggedInUser = await User.findById(user._id).select("-password");
 
-  return { user: loggedInUser, accessToken };
+  return { user: loggedInUser, accessToken, refreshToken };
 };
 
 const loginWithGoogle = async (idToken) => {
@@ -251,6 +293,8 @@ const forgotPassword = async (email) => {
     throw new ApiError(404, "User not found");
   }
 
+  await checkOtpCooldown(email, "passwordReset");
+
   await OTP.deleteMany({ email, type: "passwordReset" });
 
   const otp = generateOTP();
@@ -274,10 +318,7 @@ const forgotPassword = async (email) => {
  * Verify Reset Password OTP
  */
 const verifyResetOtp = async (email, otp) => {
-  const otpRecord = await OTP.findOne({ email, otp, type: "passwordReset" });
-  if (!otpRecord) {
-    throw new ApiError(400, "Invalid or expired OTP");
-  }
+  await validateOtpWithAttempts(email, otp, "passwordReset");
   return true;
 };
 
@@ -285,10 +326,7 @@ const verifyResetOtp = async (email, otp) => {
  * Reset Password
  */
 const resetPassword = async (email, otp, newPassword) => {
-  const otpRecord = await OTP.findOne({ email, otp, type: "passwordReset" });
-  if (!otpRecord) {
-    throw new ApiError(400, "Invalid or expired OTP");
-  }
+  const otpRecord = await validateOtpWithAttempts(email, otp, "passwordReset");
 
   const user = await User.findOne({ email });
   if (!user) {
@@ -386,10 +424,7 @@ const getUserProfile = async (userId) => {
 };
 
 const verify2FALogin = async (email, otp) => {
-  const otpRecord = await OTP.findOne({ email, otp, type: "login2FA" });
-  if (!otpRecord) {
-    throw new ApiError(400, "Invalid or expired OTP");
-  }
+  const otpRecord = await validateOtpWithAttempts(email, otp, "login2FA");
 
   const user = await User.findOne({ email });
   if (!user) {
@@ -400,9 +435,12 @@ const verify2FALogin = async (email, otp) => {
   await OTP.deleteOne({ _id: otpRecord._id });
 
   const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+  user.refreshToken = refreshToken;
+  await user.save();
   const loggedInUser = await User.findById(user._id).select("-password");
 
-  return { user: loggedInUser, accessToken };
+  return { user: loggedInUser, accessToken, refreshToken };
 };
 
 const toggle2FA = async (userId, enable) => {

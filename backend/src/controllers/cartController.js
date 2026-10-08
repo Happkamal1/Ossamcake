@@ -9,7 +9,7 @@ const asyncHandler = require("../utils/asyncHandler");
  */
 const getCart = asyncHandler(async (req, res) => {
   const cart = await cartService.getOrCreateCart(req.user._id);
-  res.status(200).json(new ApiResponse(200, cart, "Cart fetched successfully"));
+  res.status(200).json(new ApiResponse(200, cartService.formatCartResponse(cart), "Cart fetched successfully"));
 });
 
 /**
@@ -19,7 +19,7 @@ const getCart = asyncHandler(async (req, res) => {
  */
 const addToCart = asyncHandler(async (req, res) => {
   const cart = await cartService.addItemToCart(req.user._id, req.body);
-  res.status(200).json(new ApiResponse(200, cart, "Item added to cart"));
+  res.status(200).json(new ApiResponse(200, cartService.formatCartResponse(cart), "Item added to cart"));
 });
 
 /**
@@ -29,7 +29,7 @@ const addToCart = asyncHandler(async (req, res) => {
  */
 const updateCartItem = asyncHandler(async (req, res) => {
   const cart = await cartService.updateCartItem(req.user._id, req.params.itemId, req.body.quantity);
-  res.status(200).json(new ApiResponse(200, cart, "Cart item updated"));
+  res.status(200).json(new ApiResponse(200, cartService.formatCartResponse(cart), "Cart item updated"));
 });
 
 /**
@@ -39,7 +39,7 @@ const updateCartItem = asyncHandler(async (req, res) => {
  */
 const removeFromCart = asyncHandler(async (req, res) => {
   const cart = await cartService.removeCartItem(req.user._id, req.params.itemId);
-  res.status(200).json(new ApiResponse(200, cart, "Item removed from cart"));
+  res.status(200).json(new ApiResponse(200, cartService.formatCartResponse(cart), "Item removed from cart"));
 });
 
 /**
@@ -52,15 +52,19 @@ const clearCart = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, null, "Cart cleared successfully"));
 });
 
-/**
- * @desc    Apply coupon to cart
- * @route   POST /api/v1/cart/coupon
- * @access  Protected
- */
 const applyCoupon = asyncHandler(async (req, res) => {
-  const { code, subtotal } = req.body;
-  const result = await cartService.applyCoupon(req.user._id, code, subtotal);
-  res.status(200).json(new ApiResponse(200, result, `Coupon "${result.coupon.code}" applied — saved $${result.discountAmount.toFixed(2)}`));
+  const { code } = req.body;
+  // Note: req.body.subtotal is intentionally ignored to prevent client price tampering
+  const result = await cartService.applyCoupon(req.user._id, code);
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      result,
+      result.discountAmount > 0
+        ? `Coupon "${result.coupon.code}" applied — saved ₹${result.discountAmount.toFixed(2)}`
+        : "Coupon removed"
+    )
+  );
 });
 
 module.exports = { getCart, addToCart, updateCartItem, removeFromCart, clearCart, applyCoupon };

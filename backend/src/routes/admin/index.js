@@ -23,5 +23,8 @@ adminRouter.use("/reviews",     require("./review.routes"));
 adminRouter.use("/coupons",     require("./coupon.routes"));
 adminRouter.use("/banners",     require("./banner.routes"));
 adminRouter.use("/notifications", require("./notification.routes"));
+adminRouter.use("/faqs",          require("./faq.routes"));
+adminRouter.use("/testimonials",  require("./testimonial.routes"));
+adminRouter.use("/settings",      require("./siteSettings.routes"));
 
 module.exports = adminRouter;

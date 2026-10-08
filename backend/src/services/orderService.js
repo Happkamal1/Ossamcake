@@ -1,39 +1,172 @@
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const Cake = require("../models/Cake");
+const Coupon = require("../models/Coupon");
 const ApiError = require("../utils/ApiError");
+const { resolveAuthoritativeItemPricing, validateAndCalculateCoupon } = require("./cartService");
+const siteSettingsService = require("./siteSettings.service");
 
-const DELIVERY_CHARGE = 5.0;
+
 
 /**
- * Helper: Reduce stock for product variants based on ordered items
+ * Helper: Restore stock for a product variant (compensation rollback)
  */
-const reduceStock = async (items) => {
-  for (const item of items) {
-    if (!item.cake) continue;
-    const cake = await Cake.findById(item.cake);
-    if (!cake) continue;
-
-    // Find the variant matching the flavor and size
-    const variant = cake.variants.find(
-      (v) => v.flavor === item.flavor && v.size === item.size
-    );
-
-    if (variant) {
-      variant.stock = Math.max(0, variant.stock - item.quantity);
-      await cake.save();
+const restoreStock = async (cakeId, flavor, size, quantity) => {
+  try {
+    const qty = Number(quantity) || 1;
+    let res = null;
+    if (flavor && size) {
+      res = await Cake.findOneAndUpdate(
+        {
+          _id: cakeId,
+          variants: {
+            $elemMatch: { flavor, size },
+          },
+        },
+        {
+          $inc: { "variants.$.stock": qty },
+        }
+      );
     }
+    if (!res && size) {
+      res = await Cake.findOneAndUpdate(
+        {
+          _id: cakeId,
+          variants: {
+            $elemMatch: { size },
+          },
+        },
+        {
+          $inc: { "variants.$.stock": qty },
+        }
+      );
+    }
+    if (!res) {
+      await Cake.findOneAndUpdate(
+        { _id: cakeId },
+        {
+          $inc: { "variants.0.stock": qty },
+        }
+      );
+    }
+  } catch (err) {
+    console.error(`Failed to restore stock for cake ${cakeId}:`, err);
   }
 };
 
 /**
- * Validate cart items availability and calculate amounts
+ * Helper: Atomically reduce stock for product variants based on ordered items
+ * Enforces stock >= requestedQuantity and avoids negative stock.
+ * Rolls back any partially deducted items if an error occurs.
+ */
+const reduceStock = async (items) => {
+  const successfulDeductions = [];
+
+  try {
+    for (const item of items) {
+      if (!item.cake) continue;
+      const requestedQty = Number(item.quantity) || 1;
+
+      let updateResult = null;
+
+      // 1. Attempt atomic update matching both flavor and size with stock >= requestedQuantity
+      if (item.flavor && item.size) {
+        updateResult = await Cake.findOneAndUpdate(
+          {
+            _id: item.cake,
+            variants: {
+              $elemMatch: {
+                flavor: item.flavor,
+                size: item.size,
+                stock: { $gte: requestedQty },
+              },
+            },
+          },
+          {
+            $inc: { "variants.$.stock": -requestedQty },
+          },
+          { returnDocument: "after" }
+        );
+      }
+
+      // 2. If no match and size is specified, attempt match by size
+      if (!updateResult && item.size) {
+        updateResult = await Cake.findOneAndUpdate(
+          {
+            _id: item.cake,
+            variants: {
+              $elemMatch: {
+                size: item.size,
+                stock: { $gte: requestedQty },
+              },
+            },
+          },
+          {
+            $inc: { "variants.$.stock": -requestedQty },
+          },
+          { returnDocument: "after" }
+        );
+      }
+
+      // 3. Fallback to default/first variant if applicable
+      if (!updateResult) {
+        updateResult = await Cake.findOneAndUpdate(
+          {
+            _id: item.cake,
+            "variants.0.stock": { $gte: requestedQty },
+          },
+          {
+            $inc: { "variants.0.stock": -requestedQty },
+          },
+          { returnDocument: "after" }
+        );
+      }
+
+      // 4. If updateResult is still null, atomic reduction failed (insufficient stock)
+      if (!updateResult) {
+        const existingCake = await Cake.findById(item.cake);
+        if (!existingCake) {
+          throw new ApiError(404, `Product not found for inventory deduction: ${item.name || item.cake}`);
+        }
+
+        const matchedVariant = existingCake.variants.find(
+          (v) => (v.flavor === item.flavor && v.size === item.size)
+        ) || existingCake.variants.find(
+          (v) => v.size === item.size
+        ) || (existingCake.variants.length > 0 ? existingCake.variants[0] : null);
+
+        const availableStock = matchedVariant ? matchedVariant.stock : 0;
+        throw new ApiError(
+          400,
+          `Insufficient stock for "${existingCake.name}" (${item.flavor || ""} ${item.size || ""}). Requested: ${requestedQty}, Available: ${availableStock}`
+        );
+      }
+
+      successfulDeductions.push({
+        cakeId: item.cake,
+        flavor: item.flavor,
+        size: item.size,
+        quantity: requestedQty,
+      });
+    }
+  } catch (error) {
+    // Failure Safety: Roll back all previously deducted items in this transaction
+    for (const d of successfulDeductions) {
+      await restoreStock(d.cakeId, d.flavor, d.size, d.quantity);
+    }
+    throw error;
+  }
+};
+
+/**
+ * Validate cart items availability and calculate amounts.
+ * NEVER trusts client-provided discount, unitPrice, subtotal, or couponDiscount.
  */
 const validateCartAndCalculate = async (userId) => {
   // Load cart with populated cake info
   const cart = await Cart.findOne({ user: userId }).populate(
     "items.cake",
-    "name images slug status variants"
+    "name thumbnail gallery slug status variants discount basePrice egglessPremium"
   );
 
   if (!cart || cart.items.length === 0) {
@@ -43,7 +176,7 @@ const validateCartAndCalculate = async (userId) => {
   // Validate each item
   for (const item of cart.items) {
     if (!item.cake) {
-      throw new ApiError(400, `Product no longer available`);
+      throw new ApiError(400, "Product no longer available");
     }
 
     if (item.cake.status !== "active") {
@@ -71,41 +204,88 @@ const validateCartAndCalculate = async (userId) => {
   }
 
   // Build order item snapshots (frozen copies)
-  const items = cart.items.map((item) => ({
-    cake: item.cake._id,
-    name: item.cake.name,
-    image: item.cake.images?.[0] || item.cake.thumbnail || "",
-    flavor: item.flavor,
-    size: item.size,
-    quantity: item.quantity,
-    unitPrice: item.unitPrice,
-    discount: item.discount,
-    isEggless: item.isEggless,
-    cakeMessage: item.cakeMessage,
-    photoUrl: item.photoUrl,
-    deliveryDate: item.deliveryDate,
-    deliveryTimeSlot: item.deliveryTimeSlot,
-    addons: item.addons,
-  }));
+  // Re-derive price AND product discount strictly from DB Cake and Variant data
+  const items = cart.items.map((item) => {
+    const pricing = resolveAuthoritativeItemPricing(
+      item.cake,
+      item.flavor,
+      item.size,
+      item.isEggless,
+      item.addons
+    );
 
-  // Calculate pricing (mirrors Checkout.jsx / useCart values)
+    return {
+      cake: item.cake._id,
+      name: item.cake.name,
+      image: item.cake.thumbnail || "",
+      flavor: item.flavor || (pricing.variant ? pricing.variant.flavor : ""),
+      size: item.size || (pricing.variant ? pricing.variant.size : ""),
+      quantity: Math.max(1, parseInt(item.quantity, 10) || 1),
+      unitPrice: pricing.unitPrice,     // Server-authoritative price
+      discount: pricing.discount,       // Server-authoritative product discount (client ignored)
+      isEggless: Boolean(item.isEggless),
+      cakeMessage: typeof item.cakeMessage === "string" ? item.cakeMessage : "",
+      photoUrl: typeof item.photoUrl === "string" ? item.photoUrl : "",
+      deliveryDate: item.deliveryDate,
+      deliveryTimeSlot: typeof item.deliveryTimeSlot === "string" ? item.deliveryTimeSlot : "",
+      addons: item.addons || {},
+    };
+  });
+
+  // Calculate pricing strictly from authoritative line items
   const subtotal = items.reduce((sum, item) => {
     const discountedPrice = item.unitPrice * (1 - item.discount / 100);
     return sum + discountedPrice * item.quantity;
   }, 0);
 
-  const discountAmount = cart.couponDiscount || 0;
-  const taxAmount = 0; // Add tax calculation if needed
-  const grandTotal = subtotal - discountAmount + DELIVERY_CHARGE + taxAmount;
+  const roundedSubtotal = Math.round(subtotal * 100) / 100;
+
+  // Authoritatively revalidate and recalculate coupon discount against live subtotal
+  let discountAmount = 0;
+  let appliedCouponCode = "";
+
+  if (cart.appliedCoupon) {
+    try {
+      const couponResult = await validateAndCalculateCoupon(
+        userId,
+        cart.appliedCoupon,
+        roundedSubtotal
+      );
+      discountAmount = couponResult.discountAmount;
+      appliedCouponCode = couponResult.coupon.code;
+    } catch (err) {
+      console.warn(`Coupon "${cart.appliedCoupon}" invalidated during order calculation:`, err.message);
+      await Cart.findOneAndUpdate(
+        { user: userId },
+        { appliedCoupon: "", couponDiscount: 0 }
+      );
+      discountAmount = 0;
+      appliedCouponCode = "";
+    }
+  }
+
+  const settings = siteSettingsService.getSiteSettingsSync();
+  const freeShippingThreshold = settings.shipping?.freeShippingThreshold ?? 800.0;
+  const deliveryFee = settings.shipping?.shippingFee ?? 99.0;
+  const taxRate = settings.shipping?.taxRate ?? 0.05;
+
+  const deliveryCharge = roundedSubtotal >= freeShippingThreshold ? 0 : deliveryFee;
+  const taxAmount = Math.round((roundedSubtotal * taxRate) * 100) / 100;
+  
+  const grandTotal = Math.max(
+    0,
+    Math.round((roundedSubtotal - discountAmount + deliveryCharge + taxAmount) * 100) / 100
+  );
 
   return {
     cart,
     items,
-    subtotal: Math.round(subtotal * 100) / 100,
-    discountAmount: Math.round(discountAmount * 100) / 100,
-    deliveryCharge: DELIVERY_CHARGE,
+    subtotal: roundedSubtotal,
+    discountAmount,
+    deliveryCharge,
     taxAmount,
-    grandTotal: Math.round(grandTotal * 100) / 100,
+    grandTotal,
+    appliedCoupon: appliedCouponCode,
   };
 };
 
@@ -123,7 +303,7 @@ const placeOrder = async (userId, orderData) => {
     throw new ApiError(400, "Valid shipping address is required");
   }
 
-  // Validate cart and calculate amounts (server-side calculation)
+  // Validate cart and calculate amounts (100% server-side calculation)
   const calculation = await validateCartAndCalculate(userId);
 
   const orderPayload = {
@@ -133,23 +313,46 @@ const placeOrder = async (userId, orderData) => {
     paymentMethod,
     subtotal: calculation.subtotal,
     discountAmount: calculation.discountAmount,
+    discount: calculation.discountAmount,
+    couponDiscount: calculation.discountAmount,
     deliveryCharge: calculation.deliveryCharge,
+    shipping: calculation.deliveryCharge,
     taxAmount: calculation.taxAmount,
+    tax: calculation.taxAmount,
     grandTotal: calculation.grandTotal,
-    appliedCoupon: calculation.cart.appliedCoupon || "",
+    appliedCoupon: calculation.appliedCoupon || "",
     orderStatus: "pending",
     paymentStatus: "pending",
   };
 
   // If COD, clear cart and reduce stock immediately
   if (paymentMethod === "cod") {
+    // Atomically reduce stock first with failure safety (fails if insufficient stock)
+    await reduceStock(calculation.items);
+
     orderPayload.orderStatus = "confirmed";
     orderPayload.paymentStatus = "pending"; // Will be marked paid on delivery
 
-    const order = await Order.create(orderPayload);
+    let order;
+    try {
+      order = await Order.create(orderPayload);
+    } catch (orderErr) {
+      // Rollback stock if order creation failed
+      for (const item of calculation.items) {
+        if (item.cake) {
+          await restoreStock(item.cake, item.flavor, item.size, item.quantity);
+        }
+      }
+      throw orderErr;
+    }
 
-    // Reduce stock
-    await reduceStock(calculation.items);
+    // If coupon was applied, record usage
+    if (order.appliedCoupon) {
+      await Coupon.findOneAndUpdate(
+        { code: order.appliedCoupon },
+        { $inc: { usedCount: 1 } }
+      );
+    }
 
     // Clear cart
     await Cart.findOneAndUpdate(
@@ -164,8 +367,8 @@ const placeOrder = async (userId, orderData) => {
     };
   }
 
-  // If Online payment (card/upi), create order but don't clear cart or reduce stock yet
-  // Payment service will handle the rest
+  // If Online payment (card/upi/stripe), create order but don't clear cart or reduce stock yet
+  // Payment service will handle the rest upon verified payment
   const order = await Order.create(orderPayload);
 
   return { 
@@ -286,4 +489,5 @@ module.exports = {
   getAllOrders,
   updateOrderStatus,
   reduceStock,
+  restoreStock,
 };

@@ -60,11 +60,12 @@ const updateAvatar = async (userId, file) => {
   user.profileImage = file.url;
   await user.save();
 
-  // Delete old local avatar file if it exists and is stored in uploads
-  if (oldImage && oldImage.startsWith("/uploads/avatars/")) {
+  // Delete old avatar file if it exists
+  if (oldImage) {
     const storageService = require("../utils/storage.service");
     try {
-      await storageService.delete(oldImage);
+      const publicId = storageService.extractPublicIdFromUrl(oldImage) || oldImage;
+      await storageService.delete(publicId);
     } catch (err) {
       console.error("Failed to delete old avatar file:", err.message);
     }

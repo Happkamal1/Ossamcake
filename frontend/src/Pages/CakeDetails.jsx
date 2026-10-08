@@ -336,7 +336,7 @@ export default function CakeDetails() {
               className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-secondary group cursor-zoom-in"
             >
               <img
-                src={activeImage}
+                src={getImageUrl(activeImage)}
                 alt={cake.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
               />
@@ -356,7 +356,7 @@ export default function CakeDetails() {
                   activeImage === (cake.image || cake.thumbnail) ? "border-primary" : "border-border"
                 }`}
               >
-                <img src={cake.image || cake.thumbnail} alt={cake.name} className="h-full w-full object-cover" />
+                <img src={getImageUrl(cake.image || cake.thumbnail)} alt={cake.name} className="h-full w-full object-cover" />
               </button>
               
               {/* Gallery Images */}
@@ -368,7 +368,7 @@ export default function CakeDetails() {
                     activeImage === img ? "border-primary" : "border-border"
                   }`}
                 >
-                  <img src={img} alt="gallery thumbnail" className="h-full w-full object-cover" />
+                  <img src={getImageUrl(img)} alt="gallery thumbnail" className="h-full w-full object-cover" />
                 </button>
               ))}
             </div>
@@ -855,7 +855,7 @@ export default function CakeDetails() {
           </button>
           <div className="max-w-4xl max-h-[90vh] p-4">
             <img 
-              src={activeImage} 
+              src={getImageUrl(activeImage)} 
               alt={cake.name} 
               className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl scale-in"
             />

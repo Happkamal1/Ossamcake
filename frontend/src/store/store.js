@@ -8,6 +8,9 @@ import productReducer from '../features/products/productSlice';
 import reviewReducer from '../features/reviews/reviewSlice';
 import bannerReducer from '../features/banners/bannerSlice';
 import notificationReducer from '../features/notifications/notificationSlice';
+import siteSettingsReducer from '../features/siteSettings/siteSettingsSlice';
+import faqReducer from '../features/faqs/faqSlice';
+import testimonialReducer from '../features/testimonials/testimonialSlice';
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +23,9 @@ export const store = configureStore({
     reviews: reviewReducer,
     banners: bannerReducer,
     notifications: notificationReducer,
+    siteSettings: siteSettingsReducer,
+    faqs: faqReducer,
+    testimonials: testimonialReducer,
   },
 });
 

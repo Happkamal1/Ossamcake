@@ -56,6 +56,9 @@ const verifyWebhookSignature = (body, signature, secret) => {
  * @returns {String} Mock signature
  */
 const generateMockSignature = (orderId, paymentId) => {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Mock signature generation is strictly prohibited in production");
+  }
   const mockSecret = "test_secret_key";
   const body = `${orderId}|${paymentId}`;
   return generateSignature(body, mockSecret);

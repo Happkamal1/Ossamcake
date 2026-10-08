@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Quote, BadgeCheck } from "lucide-react";
+import { fetchPublicTestimonials } from "@/features/testimonials/testimonialSlice";
 
-const REVIEWS = [
+const FALLBACK_REVIEWS = [
   {
     name: "Aisha Rahman",
     role: "Bride",
@@ -27,26 +29,41 @@ const REVIEWS = [
 ];
 
 export default function MobileTestimonials() {
+  const dispatch = useDispatch();
+  const { testimonials } = useSelector((state) => state.testimonials);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    if (isPaused) return;
+    if (!testimonials || testimonials.length === 0) {
+      dispatch(fetchPublicTestimonials());
+    }
+  }, [dispatch, testimonials]);
+
+  const displayReviews = (testimonials && testimonials.length > 0) ? testimonials : FALLBACK_REVIEWS;
+
+  useEffect(() => {
+    if (isPaused || displayReviews.length <= 1) return;
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % REVIEWS.length);
+      setCurrentIndex((prev) => (prev + 1) % displayReviews.length);
     }, 4000);
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, [isPaused, displayReviews.length]);
 
   // Handle swipe gestures
   const handleDragEnd = (e, { offset, velocity }) => {
     const swipe = Math.abs(offset.x) * velocity.x;
     if (swipe < -100) {
-      setCurrentIndex((prev) => (prev + 1) % REVIEWS.length);
+      setCurrentIndex((prev) => (prev + 1) % displayReviews.length);
     } else if (swipe > 100) {
-      setCurrentIndex((prev) => (prev - 1 + REVIEWS.length) % REVIEWS.length);
+      setCurrentIndex((prev) => (prev - 1 + displayReviews.length) % displayReviews.length);
     }
   };
+
+  const currentReview = displayReviews[currentIndex] || displayReviews[0];
+  const rating = currentReview?.rating || 5;
+  const text = currentReview?.message || currentReview?.text;
+  const avatar = currentReview?.avatar || (currentReview?.name ? currentReview.name.slice(0, 2).toUpperCase() : "CU");
 
   return (
     <section className="py-16 bg-secondary/20 md:hidden overflow-hidden">
@@ -79,26 +96,26 @@ export default function MobileTestimonials() {
             
             <div className="space-y-4">
               <div className="flex text-accent">
-                {[...Array(REVIEWS[currentIndex].rating)].map((_, i) => (
+                {[...Array(rating)].map((_, i) => (
                   <Star key={i} className="h-4 w-4 fill-current" />
                 ))}
               </div>
               <p className="text-[15px] text-foreground/80 leading-relaxed font-medium italic relative z-10 line-clamp-4">
-                "{REVIEWS[currentIndex].text}"
+                "{text}"
               </p>
             </div>
             
             <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border/50">
               <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-black flex items-center justify-center shadow-inner">
-                {REVIEWS[currentIndex].avatar}
+                {avatar}
               </div>
               <div>
                 <h4 className="font-bold text-foreground text-sm flex items-center gap-1">
-                  {REVIEWS[currentIndex].name}
+                  {currentReview?.name}
                   <BadgeCheck className="h-4 w-4 text-blue-500" />
                 </h4>
                 <p className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">
-                  {REVIEWS[currentIndex].role}
+                  {currentReview?.role || "Customer"}
                 </p>
               </div>
             </div>
@@ -107,15 +124,17 @@ export default function MobileTestimonials() {
       </div>
       
       {/* Pagination indicators */}
-      <div className="flex justify-center gap-2 mt-2">
-        {REVIEWS.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrentIndex(i)}
-            className={`h-2 rounded-full transition-all duration-300 ${i === currentIndex ? "w-6 bg-primary" : "w-2 bg-border hover:bg-border/80"}`}
-          />
-        ))}
-      </div>
+      {displayReviews.length > 1 && (
+        <div className="flex justify-center gap-2 mt-2">
+          {displayReviews.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentIndex(i)}
+              className={`h-2 rounded-full transition-all duration-300 ${i === currentIndex ? "w-6 bg-primary" : "w-2 bg-border hover:bg-border/80"}`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

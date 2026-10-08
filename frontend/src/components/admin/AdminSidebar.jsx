@@ -4,7 +4,8 @@ import { logoutUser } from "@/features/auth/authSlice";
 import { toast } from "sonner";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, Tag, Calendar,
-  Cake, Star, Ticket, Image, LogOut, ChevronRight, X, Bell
+  Cake, Star, Ticket, Image, LogOut, ChevronRight, X, Bell,
+  HelpCircle, Quote, Settings
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -15,10 +16,13 @@ const NAV_ITEMS = [
   { to: "/admin/categories",icon: Tag,             label: "Categories" },
   { to: "/admin/occasions", icon: Calendar,        label: "Occasions" },
   { to: "/admin/cake-types",icon: Cake,            label: "Cake Types" },
-  { to: "/admin/reviews",        icon: Star,    label: "Reviews" },
-  { to: "/admin/coupons",        icon: Ticket,  label: "Coupons" },
-  { to: "/admin/banners",        icon: Image,   label: "Banners" },
-  { to: "/admin/notifications",  icon: Bell,    label: "Notifications" },
+  { to: "/admin/reviews",        icon: Star,       label: "Reviews" },
+  { to: "/admin/coupons",        icon: Ticket,     label: "Coupons" },
+  { to: "/admin/banners",        icon: Image,      label: "Banners" },
+  { to: "/admin/notifications",  icon: Bell,       label: "Notifications" },
+  { to: "/admin/faqs",           icon: HelpCircle, label: "FAQs" },
+  { to: "/admin/testimonials",   icon: Quote,      label: "Testimonials" },
+  { to: "/admin/site-settings",  icon: Settings,   label: "Site Settings" },
 ];
 
 export default function AdminSidebar({ open, onClose }) {

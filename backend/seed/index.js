@@ -20,6 +20,9 @@ const { seedCategories, deleteCategories } = require("./seeders/categories.seede
 const { seedOccasions, deleteOccasions } = require("./seeders/occasions.seeder");
 const { seedCakeTypes, deleteCakeTypes } = require("./seeders/cakeTypes.seeder");
 const { seedProducts, deleteProducts } = require("./seeders/products.seeder");
+const { seedFAQs, deleteFAQs } = require("./seeders/faqs.seeder");
+const { seedTestimonials, deleteTestimonials } = require("./seeders/testimonials.seeder");
+const { seedSiteSettings, deleteSiteSettings } = require("./seeders/siteSettings.seeder");
 
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -45,6 +48,9 @@ async function runSeed() {
     await seedOccasions();
     await seedCakeTypes();
     await seedProducts();
+    await seedFAQs();
+    await seedTestimonials();
+    await seedSiteSettings();
 
     console.log("\n✅ All collections seeded successfully!\n");
   } catch (err) {
@@ -66,6 +72,9 @@ async function runDelete() {
     console.log("🗑️  Starting delete process...\n");
 
     // Delete in reverse dependency order
+    await deleteSiteSettings();
+    await deleteTestimonials();
+    await deleteFAQs();
     await deleteProducts();
     await deleteCakeTypes();
     await deleteOccasions();

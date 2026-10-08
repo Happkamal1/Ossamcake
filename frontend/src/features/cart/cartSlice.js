@@ -7,7 +7,7 @@ const mapCartItems = (items = []) => {
     id: item._id, // MongoDB cart item ID
     cakeId: item.cake?._id || item.cake,
     name: item.cake?.name || "",
-    image: item.cake?.images?.[0] || item.cake?.thumbnail || item.cake?.image || "/images/cakes/custom-birthday.jpg",
+    image: item.cake?.images?.[0] || item.cake?.thumbnail || item.cake?.image || "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/custom-birthday.jpg",
     flavor: item.flavor || "Classic",
     weight: item.size || "1 kg",
     isEggless: item.isEggless || false,
@@ -96,6 +96,10 @@ const initialState = {
   cartItems: [],
   coupon: null,
   couponDiscount: 0,
+  subtotal: 0,
+  deliveryCharge: 0,
+  taxAmount: 0,
+  grandTotal: 0,
   loading: false,
   error: null,
 };
@@ -130,6 +134,10 @@ const cartSlice = createSlice({
         state.cartItems = mapCartItems(action.payload?.items);
         state.coupon = action.payload?.appliedCoupon ? { code: action.payload.appliedCoupon } : null;
         state.couponDiscount = action.payload?.couponDiscount || 0;
+        state.subtotal = action.payload?.subtotal || 0;
+        state.deliveryCharge = action.payload?.deliveryCharge || 0;
+        state.taxAmount = action.payload?.taxAmount || 0;
+        state.grandTotal = action.payload?.grandTotal || 0;
       })
       .addCase(fetchCart.rejected, rejected)
 
@@ -140,6 +148,10 @@ const cartSlice = createSlice({
         state.cartItems = mapCartItems(action.payload?.items);
         state.coupon = action.payload?.appliedCoupon ? { code: action.payload.appliedCoupon } : null;
         state.couponDiscount = action.payload?.couponDiscount || 0;
+        state.subtotal = action.payload?.subtotal || 0;
+        state.deliveryCharge = action.payload?.deliveryCharge || 0;
+        state.taxAmount = action.payload?.taxAmount || 0;
+        state.grandTotal = action.payload?.grandTotal || 0;
       })
       .addCase(addToCartAsync.rejected, rejected)
 
@@ -150,6 +162,10 @@ const cartSlice = createSlice({
         state.cartItems = mapCartItems(action.payload?.items);
         state.coupon = action.payload?.appliedCoupon ? { code: action.payload.appliedCoupon } : null;
         state.couponDiscount = action.payload?.couponDiscount || 0;
+        state.subtotal = action.payload?.subtotal || 0;
+        state.deliveryCharge = action.payload?.deliveryCharge || 0;
+        state.taxAmount = action.payload?.taxAmount || 0;
+        state.grandTotal = action.payload?.grandTotal || 0;
       })
       .addCase(updateQuantityAsync.rejected, rejected)
 
@@ -160,6 +176,10 @@ const cartSlice = createSlice({
         state.cartItems = mapCartItems(action.payload?.items);
         state.coupon = action.payload?.appliedCoupon ? { code: action.payload.appliedCoupon } : null;
         state.couponDiscount = action.payload?.couponDiscount || 0;
+        state.subtotal = action.payload?.subtotal || 0;
+        state.deliveryCharge = action.payload?.deliveryCharge || 0;
+        state.taxAmount = action.payload?.taxAmount || 0;
+        state.grandTotal = action.payload?.grandTotal || 0;
       })
       .addCase(removeFromCartAsync.rejected, rejected)
 
@@ -170,6 +190,10 @@ const cartSlice = createSlice({
         state.cartItems = [];
         state.coupon = null;
         state.couponDiscount = 0;
+        state.subtotal = 0;
+        state.deliveryCharge = 0;
+        state.taxAmount = 0;
+        state.grandTotal = 0;
       })
       .addCase(clearCartAsync.rejected, rejected)
 
@@ -177,8 +201,12 @@ const cartSlice = createSlice({
       .addCase(applyCouponAsync.pending, pending)
       .addCase(applyCouponAsync.fulfilled, (state, action) => {
         state.loading = false;
-        state.coupon = { code: action.payload.coupon.code };
-        state.couponDiscount = action.payload.discountAmount || 0;
+        state.coupon = action.payload?.coupon?.code ? { code: action.payload.coupon.code } : null;
+        state.couponDiscount = action.payload?.discountAmount || 0;
+        if (action.payload?.subtotal !== undefined) state.subtotal = action.payload.subtotal;
+        if (action.payload?.deliveryCharge !== undefined) state.deliveryCharge = action.payload.deliveryCharge;
+        if (action.payload?.taxAmount !== undefined) state.taxAmount = action.payload.taxAmount;
+        if (action.payload?.grandTotal !== undefined) state.grandTotal = action.payload.grandTotal;
       })
       .addCase(applyCouponAsync.rejected, rejected);
   },
@@ -191,26 +219,10 @@ export const selectCartItems = (state) => state.cart.cartItems;
 export const selectCoupon = (state) => state.cart.coupon;
 export const selectCouponDiscount = (state) => state.cart.couponDiscount;
 
-export const selectSubtotal = (state) =>
-  state.cart.cartItems.reduce((acc, item) => {
-    const price = parseFloat(item.price);
-    const discountAmt = item.discount ? (price * item.discount) / 100 : 0;
-    return acc + (price - discountAmt) * item.quantity;
-  }, 0);
-
+export const selectSubtotal = (state) => state.cart.subtotal;
 export const selectDiscountAmount = (state) => state.cart.couponDiscount;
-
-export const selectDeliveryCharge = (state) => {
-  const subtotal = selectSubtotal(state);
-  if (subtotal === 0) return 0;
-  return subtotal > 80 ? 0 : 5.99;
-};
-
-export const selectGrandTotal = (state) => {
-  const subtotal = selectSubtotal(state);
-  const discount = selectDiscountAmount(state);
-  const delivery = selectDeliveryCharge(state);
-  return Math.max(0, subtotal - discount + delivery);
-};
+export const selectDeliveryCharge = (state) => state.cart.deliveryCharge;
+export const selectTaxAmount = (state) => state.cart.taxAmount;
+export const selectGrandTotal = (state) => state.cart.grandTotal;
 
 export default cartSlice.reducer;

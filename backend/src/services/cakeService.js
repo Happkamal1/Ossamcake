@@ -36,7 +36,7 @@ const getAllCakes = async (query) => {
   // 3. Dynamic CakeType Resolution
   if (cakeType) {
     const type = await CakeType.findOne({
-      $or: [{ name: cakeType }, { slug: type }]
+      $or: [{ name: cakeType }, { slug: cakeType }]
     });
     if (type) filter.cakeTypes = type._id;
   }
@@ -117,7 +117,7 @@ const getCakeBySlug = async (slug) => {
  * Get cake by MongoDB _id
  */
 const getCakeById = async (id) => {
-  const cake = await Cake.findById(id)
+  const cake = await Cake.findOne({ _id: id, status: "active" })
     .populate("categories occasions cakeTypes");
   if (!cake) throw new ApiError(404, "Cake not found");
   return cake;

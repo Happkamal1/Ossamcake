@@ -23,14 +23,21 @@ const updateProduct = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, product, MESSAGES.PRODUCT_UPDATED));
 });
 
+const toggleProductStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  const product = await productService.toggleStatus(req.params.id, status);
+  const actionText = product.status === "active" ? "activated" : "deactivated";
+  res.status(200).json(new ApiResponse(200, product, `Product ${actionText} successfully`));
+});
+
 const softDeleteProduct = asyncHandler(async (req, res) => {
   const product = await productService.softDeleteProduct(req.params.id);
-  res.status(200).json(new ApiResponse(200, product, MESSAGES.PRODUCT_DELETED));
+  res.status(200).json(new ApiResponse(200, product, "Product deactivated successfully"));
 });
 
 const hardDeleteProduct = asyncHandler(async (req, res) => {
-  await productService.hardDeleteProduct(req.params.id);
-  res.status(200).json(new ApiResponse(200, null, "Product permanently deleted"));
+  const result = await productService.hardDeleteProduct(req.params.id);
+  res.status(200).json(new ApiResponse(200, result, "Product permanently deleted"));
 });
 
 const toggleFlag = asyncHandler(async (req, res) => {
@@ -51,4 +58,14 @@ const uploadImage = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, { url: result.url, publicId: result.publicId }, "Image uploaded successfully"));
 });
 
-module.exports = { getAllProducts, getProductById, createProduct, updateProduct, softDeleteProduct, hardDeleteProduct, toggleFlag, uploadImage };
+module.exports = {
+  getAllProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  toggleProductStatus,
+  softDeleteProduct,
+  hardDeleteProduct,
+  toggleFlag,
+  uploadImage,
+};

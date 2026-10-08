@@ -3,16 +3,14 @@ import { API_BASE_URL } from "@/lib/api";
 
 /**
  * Payment Service - Frontend
- * Handles all payment-related API calls and Razorpay integration
+ * Handles all payment-related API calls and gateways (Razorpay + Stripe)
  */
 
-/**
- * Payment Service Class
- */
 class PaymentService {
   constructor() {
     this.razorpayLoaded = false;
     this.razorpayKeyId = null;
+    this.stripePublishableKey = null;
   }
 
   /**
@@ -20,7 +18,8 @@ class PaymentService {
    * @returns {Promise<boolean>}
    */
   async loadRazorpayScript() {
-    if (this.razorpayLoaded) {
+    if (this.razorpayLoaded || window.Razorpay) {
+      this.razorpayLoaded = true;
       return true;
     }
 
@@ -63,6 +62,11 @@ class PaymentService {
         return this.razorpayKeyId;
       }
 
+      if (import.meta.env.VITE_RAZORPAY_KEY_ID) {
+        this.razorpayKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
+        return this.razorpayKeyId;
+      }
+
       const response = await axios.get(`${API_BASE_URL}/payments/key`);
       this.razorpayKeyId = response.data.data.keyId;
       return this.razorpayKeyId;
@@ -73,7 +77,31 @@ class PaymentService {
   }
 
   /**
-   * Create payment order
+   * Get Stripe Publishable Key
+   * @returns {Promise<string>}
+   */
+  async getStripeKey() {
+    try {
+      if (this.stripePublishableKey) {
+        return this.stripePublishableKey;
+      }
+
+      if (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
+        this.stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+        return this.stripePublishableKey;
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/payments/stripe/key`);
+      this.stripePublishableKey = response.data.data?.publishableKey;
+      return this.stripePublishableKey;
+    } catch (error) {
+      console.error("Failed to get Stripe key:", error);
+      throw this._handleError(error);
+    }
+  }
+
+  /**
+   * Create Razorpay payment order
    * @param {string} orderId - Order ID
    * @returns {Promise<Object>}
    */
@@ -83,9 +111,8 @@ class PaymentService {
         `${API_BASE_URL}/payments/create-order`,
         { orderId },
         {
-          headers: {
-            Authorization: `Bearer ${this._getToken()}`,
-          },
+          withCredentials: true,
+          headers: this._getAuthHeaders(),
         }
       );
       return response.data.data;
@@ -96,7 +123,51 @@ class PaymentService {
   }
 
   /**
-   * Verify payment
+   * Create Stripe PaymentIntent
+   * @param {Object} payload - { orderId, shippingAddress }
+   * @returns {Promise<Object>}
+   */
+  async createStripeIntent(payload) {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/payments/stripe/create-intent`,
+        payload,
+        {
+          withCredentials: true,
+          headers: this._getAuthHeaders(),
+        }
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error("Failed to create Stripe PaymentIntent:", error);
+      throw this._handleError(error);
+    }
+  }
+
+  /**
+   * Confirm Stripe payment / verify status
+   * @param {string} paymentIntentId
+   * @returns {Promise<Object>}
+   */
+  async confirmStripePayment(paymentIntentId) {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/payments/stripe/confirm`,
+        { paymentIntentId },
+        {
+          withCredentials: true,
+          headers: this._getAuthHeaders(),
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Stripe payment confirmation failed:", error);
+      throw this._handleError(error);
+    }
+  }
+
+  /**
+   * Verify Razorpay payment
    * @param {Object} paymentData - Payment verification data
    * @returns {Promise<Object>}
    */
@@ -106,9 +177,8 @@ class PaymentService {
         `${API_BASE_URL}/payments/verify`,
         paymentData,
         {
-          headers: {
-            Authorization: `Bearer ${this._getToken()}`,
-          },
+          withCredentials: true,
+          headers: this._getAuthHeaders(),
         }
       );
       return response.data;
@@ -129,9 +199,8 @@ class PaymentService {
         `${API_BASE_URL}/payments/failure`,
         failureData,
         {
-          headers: {
-            Authorization: `Bearer ${this._getToken()}`,
-          },
+          withCredentials: true,
+          headers: this._getAuthHeaders(),
         }
       );
       return response.data;
@@ -151,9 +220,8 @@ class PaymentService {
       const response = await axios.get(
         `${API_BASE_URL}/payments/${paymentId}/status`,
         {
-          headers: {
-            Authorization: `Bearer ${this._getToken()}`,
-          },
+          withCredentials: true,
+          headers: this._getAuthHeaders(),
         }
       );
       return response.data.data;
@@ -174,9 +242,8 @@ class PaymentService {
       const url = `${API_BASE_URL}/payments/history${queryParams ? `?${queryParams}` : ""}`;
       
       const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${this._getToken()}`,
-        },
+        withCredentials: true,
+        headers: this._getAuthHeaders(),
       });
       return response.data.data;
     } catch (error) {
@@ -196,9 +263,8 @@ class PaymentService {
         `${API_BASE_URL}/payments/${paymentId}/retry`,
         {},
         {
-          headers: {
-            Authorization: `Bearer ${this._getToken()}`,
-          },
+          withCredentials: true,
+          headers: this._getAuthHeaders(),
         }
       );
       return response.data.data;
@@ -209,7 +275,7 @@ class PaymentService {
   }
 
   /**
-   * Open Razorpay checkout modal
+   * Open Razorpay checkout modal with optimized UPI Intent / mobile flow & QR fallback
    * @param {Object} options - Payment options
    * @returns {Promise<Object>}
    */
@@ -217,7 +283,7 @@ class PaymentService {
     const {
       orderId,
       amount,
-      currency,
+      currency = "INR",
       orderNumber,
       userDetails,
       onSuccess,
@@ -237,13 +303,12 @@ class PaymentService {
       try {
         keyId = await this.getRazorpayKey();
       } catch (error) {
-        // If Razorpay not configured, show friendly message
         throw new Error(
           "Payment gateway is not configured. Please use Cash on Delivery or contact support."
         );
       }
 
-      // 3. Prepare Razorpay options
+      // 3. Prepare Razorpay options with UPI Intent / Mobile optimization
       const razorpayOptions = {
         key: keyId,
         amount: amount,
@@ -257,7 +322,40 @@ class PaymentService {
           contact: userDetails?.phone || "",
         },
         theme: {
-          color: "#FF5C8A", // Your primary brand color
+          color: "#db2777", // OssamCake pink
+        },
+        // Optimize method display: prioritize UPI Intent / Google Pay / PhonePe / Paytm
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay via UPI (Google Pay, PhonePe, Paytm, QR)",
+                instruments: [
+                  {
+                    method: "upi",
+                  },
+                ],
+              },
+              cards: {
+                name: "Cards & Other Methods",
+                instruments: [
+                  {
+                    method: "card",
+                  },
+                  {
+                    method: "netbanking",
+                  },
+                  {
+                    method: "wallet",
+                  },
+                ],
+              },
+            },
+            sequence: ["block.upi", "block.cards"],
+            preferences: {
+              show_default_blocks: true,
+            },
+          },
         },
         modal: {
           ondismiss: () => {
@@ -293,12 +391,12 @@ class PaymentService {
       razorpay.on("payment.failed", async (response) => {
         const failureData = {
           razorpay_order_id: orderId,
-          razorpay_payment_id: response.error.metadata?.payment_id || "",
-          error_code: response.error.code,
-          error_description: response.error.description,
-          error_source: response.error.source,
-          error_step: response.error.step,
-          error_reason: response.error.reason,
+          razorpay_payment_id: response.error?.metadata?.payment_id || "",
+          error_code: response.error?.code,
+          error_description: response.error?.description,
+          error_source: response.error?.source,
+          error_step: response.error?.step,
+          error_reason: response.error?.reason,
         };
 
         // Record failure
@@ -317,51 +415,12 @@ class PaymentService {
   }
 
   /**
-   * Process payment (Complete flow)
-   * @param {string} orderId - Order ID from backend
-   * @param {Object} userDetails - User information
-   * @returns {Promise<Object>}
-   */
-  async processPayment(orderId, userDetails) {
-    try {
-      // 1. Create payment order
-      const paymentOrder = await this.createPaymentOrder(orderId);
-
-      // 2. Return promise for payment flow
-      return new Promise((resolve, reject) => {
-        this.openRazorpay({
-          orderId: paymentOrder.orderId,
-          amount: paymentOrder.amount,
-          currency: paymentOrder.currency,
-          orderNumber: paymentOrder.orderNumber,
-          userDetails,
-          onSuccess: (result) => {
-            resolve(result);
-          },
-          onFailure: (error) => {
-            reject(error);
-          },
-          onDismiss: () => {
-            reject(new Error("Payment cancelled by user"));
-          },
-        });
-      });
-    } catch (error) {
-      console.error("Payment processing error:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get JWT token from localStorage
+   * Helper to get auth headers if token exists in localStorage
    * @private
    */
-  _getToken() {
+  _getAuthHeaders() {
     const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Authentication required. Please log in.");
-    }
-    return token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
   /**
@@ -370,14 +429,11 @@ class PaymentService {
    */
   _handleError(error) {
     if (error.response) {
-      // Server responded with error
       const message = error.response.data?.message || "An error occurred";
       return new Error(message);
     } else if (error.request) {
-      // Request made but no response
       return new Error("Network error. Please check your connection.");
     } else {
-      // Something else happened
       return error;
     }
   }

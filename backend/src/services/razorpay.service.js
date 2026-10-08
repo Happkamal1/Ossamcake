@@ -28,6 +28,13 @@ class RazorpayService {
   }
 
   /**
+   * Helper: Check if runtime environment is production
+   */
+  isProduction() {
+    return process.env.NODE_ENV === "production";
+  }
+
+  /**
    * Initialize Razorpay instance
    * Checks for credentials and initializes accordingly
    */
@@ -41,15 +48,23 @@ class RazorpayService {
         });
         
         this.isConfigured = true;
-        console.log("✅ Razorpay Service: Configured and ready");
+        const mode = this.keyId.startsWith("rzp_test_") ? "TEST/DEMO" : "LIVE";
+        console.log(`✅ Razorpay Service: Configured and ready (${mode} mode)`);
       } catch (error) {
-        console.warn("⚠️  Razorpay SDK not installed. Run: npm install razorpay");
+        console.error("❌ Razorpay SDK initialization failed:", error.message);
         this.isConfigured = false;
+        if (this.isProduction()) {
+          console.error("🚨 CRITICAL: Razorpay SDK failed to initialize in PRODUCTION environment!");
+        }
       }
     } else {
-      console.warn("⚠️  Razorpay credentials not found. Payment system running in MOCK mode.");
-      console.warn("   Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to .env to enable real payments.");
       this.isConfigured = false;
+      if (this.isProduction()) {
+        console.error("🚨 CRITICAL SECURITY ALERT: Razorpay credentials missing in PRODUCTION environment! All mock payment fallbacks are HARD-BLOCKED.");
+      } else {
+        console.warn("⚠️  Razorpay credentials not found. Payment system running in controlled MOCK mode (DEVELOPMENT ONLY).");
+        console.warn("   Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to .env to enable real payments.");
+      }
     }
   }
 
@@ -58,6 +73,9 @@ class RazorpayService {
    */
   getKeyId() {
     if (!this.keyId) {
+      if (this.isProduction()) {
+        throw new ApiError(500, "Payment gateway configuration error: Razorpay credentials are missing in production.");
+      }
       throw new ApiError(503, "Razorpay is not configured yet. Please contact support.");
     }
     return this.keyId;
@@ -68,7 +86,9 @@ class RazorpayService {
    */
   checkConfiguration() {
     return {
+      isEnabled: true,
       isConfigured: this.isConfigured,
+      mode: this.keyId && this.keyId.startsWith("rzp_test_") ? "test" : (this.keyId && this.keyId.startsWith("rzp_live_") ? "live" : "mock"),
       hasKeyId: !!this.keyId,
       hasKeySecret: !!this.keySecret,
       hasWebhookSecret: !!this.webhookSecret,
@@ -109,7 +129,15 @@ class RazorpayService {
       }
     }
 
-    // MOCK MODE: Generate mock order for testing
+    // PRODUCTION HARD BLOCK: Never generate mock orders in production
+    if (this.isProduction()) {
+      throw new ApiError(
+        500,
+        "Payment order creation failed: Razorpay gateway credentials are not configured in production. Mock orders are strictly disabled."
+      );
+    }
+
+    // MOCK MODE: Generate mock order for testing (controlled non-production ONLY)
     return this._createMockOrder({
       amount: amountInSubunit,
       currency: currency.toUpperCase(),
@@ -122,6 +150,9 @@ class RazorpayService {
    * Create mock order (for development without credentials)
    */
   _createMockOrder(options) {
+    if (this.isProduction()) {
+      throw new ApiError(500, "Mock order creation is strictly prohibited in production");
+    }
     const mockOrderId = `order_${crypto.randomBytes(14).toString("hex")}`;
     
     return {
@@ -151,7 +182,17 @@ class RazorpayService {
       throw new ApiError(400, "Missing payment verification parameters");
     }
 
-    // MOCK MODE: Simulate signature verification
+    // PRODUCTION HARD BLOCK: If in production, credentials MUST be configured and mock verification is strictly forbidden
+    if (this.isProduction()) {
+      if (!this.isConfigured || !this.keySecret) {
+        throw new ApiError(
+          500,
+          "Payment verification failed: Razorpay credentials are missing in production. Signature verification cannot be bypassed."
+        );
+      }
+    }
+
+    // MOCK MODE: Simulate signature verification (controlled non-production ONLY)
     if (!this.isConfigured) {
       // Allow "test_success" signature for testing success flow
       if (razorpay_signature === "test_success") {
@@ -161,7 +202,7 @@ class RazorpayService {
       if (razorpay_signature === "test_failure") {
         return false;
       }
-      // For any other signature in mock mode, accept it
+      // For any other signature in development mock mode without credentials, accept it
       return true;
     }
 
@@ -180,6 +221,7 @@ class RazorpayService {
       return expectedSignature === razorpay_signature;
     } catch (error) {
       console.error("Signature verification error:", error);
+      if (error instanceof ApiError) throw error;
       throw new ApiError(500, "Signature verification failed");
     }
   }
@@ -199,7 +241,15 @@ class RazorpayService {
       }
     }
 
-    // Mock mode
+    // PRODUCTION HARD BLOCK: Never return mock payment in production
+    if (this.isProduction()) {
+      throw new ApiError(
+        500,
+        "Cannot fetch payment: Razorpay gateway credentials are not configured in production."
+      );
+    }
+
+    // Mock mode (controlled non-production ONLY)
     return this._createMockPayment(paymentId);
   }
 
@@ -207,6 +257,9 @@ class RazorpayService {
    * Create mock payment (for development)
    */
   _createMockPayment(paymentId) {
+    if (this.isProduction()) {
+      throw new ApiError(500, "Mock payment creation is strictly prohibited in production");
+    }
     return {
       id: paymentId,
       entity: "payment",
@@ -229,12 +282,20 @@ class RazorpayService {
    */
   verifyWebhookSignature(webhookBody, webhookSignature) {
     if (!this.isConfigured) {
-      // In mock mode, accept all webhooks
+      if (this.isProduction()) {
+        console.error("❌ Production error: Razorpay webhook received but gateway credentials are not configured");
+        return false;
+      }
+      // In mock mode (non-production only), accept all webhooks
       console.warn("⚠️  Mock mode: Webhook signature verification skipped");
       return true;
     }
 
     if (!this.webhookSecret) {
+      if (this.isProduction()) {
+        console.error("❌ Production error: Razorpay webhook secret missing in production");
+        return false;
+      }
       throw new ApiError(500, "Webhook secret not configured");
     }
 
@@ -270,7 +331,14 @@ class RazorpayService {
       }
     }
 
-    // Mock mode
+    if (this.isProduction()) {
+      throw new ApiError(
+        500,
+        "Refund failed: Razorpay gateway credentials are not configured in production."
+      );
+    }
+
+    // Mock mode (controlled non-production ONLY)
     return this._createMockRefund(paymentId, amount);
   }
 
@@ -278,6 +346,9 @@ class RazorpayService {
    * Create mock refund (for development)
    */
   _createMockRefund(paymentId, amount) {
+    if (this.isProduction()) {
+      throw new ApiError(500, "Mock refund is strictly prohibited in production");
+    }
     return {
       id: `rfnd_${crypto.randomBytes(14).toString("hex")}`,
       entity: "refund",
@@ -308,7 +379,14 @@ class RazorpayService {
       }
     }
 
-    // Mock mode
+    if (this.isProduction()) {
+      throw new ApiError(
+        500,
+        "Payment capture failed: Razorpay gateway credentials are not configured in production."
+      );
+    }
+
+    // Mock mode (controlled non-production ONLY)
     return this._createMockCapture(paymentId, amount);
   }
 
@@ -316,6 +394,9 @@ class RazorpayService {
    * Create mock capture (for development)
    */
   _createMockCapture(paymentId, amount) {
+    if (this.isProduction()) {
+      throw new ApiError(500, "Mock capture is strictly prohibited in production");
+    }
     return {
       id: paymentId,
       entity: "payment",

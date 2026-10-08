@@ -30,6 +30,14 @@ class StorageService {
   async delete(publicId) {
     throw new Error("StorageService.delete() must be implemented by a subclass.");
   }
+
+  /**
+   * @param {string} url — full URL stored in DB
+   * @returns {string|null} publicId
+   */
+  extractPublicIdFromUrl(url) {
+    throw new Error("StorageService.extractPublicIdFromUrl() must be implemented by a subclass.");
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,11 +64,21 @@ class LocalStorageService extends StorageService {
   }
 
   async delete(publicId) {
+    // Prevent path traversal
+    if (publicId.includes("..") || publicId.includes("~")) {
+      console.warn(`[Security Warning] Attempted path traversal in delete: ${publicId}`);
+      return;
+    }
     // publicId is the relative URL path, convert to absolute path
     const absolutePath = path.join(__dirname, "../../", publicId);
     if (fs.existsSync(absolutePath)) {
       fs.unlinkSync(absolutePath);
     }
+  }
+
+  extractPublicIdFromUrl(url) {
+    if (!url) return null;
+    return url.startsWith("/") ? url : null;
   }
 }
 
@@ -72,6 +90,9 @@ const { S3Client, PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/cl
 class S3StorageService extends StorageService {
   constructor() {
     super();
+    if (!process.env.AWS_REGION || !process.env.S3_BUCKET_NAME) {
+      throw new Error("S3 config missing: AWS_REGION and S3_BUCKET_NAME are required when STORAGE_DRIVER=s3");
+    }
     // In production EC2 with an IAM role attached, you do not need to supply AWS access keys.
     // The AWS SDK will automatically fetch temporary credentials from the EC2 instance metadata.
     this.s3Client = new S3Client({ region: process.env.AWS_REGION });
@@ -82,7 +103,7 @@ class S3StorageService extends StorageService {
     if (!file.buffer) {
       throw new Error("S3StorageService requires file.buffer. Make sure memoryStorage is used.");
     }
-    
+
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     const filename = `${uniqueSuffix}${ext}`;
@@ -107,12 +128,30 @@ class S3StorageService extends StorageService {
   }
 
   async delete(publicId) {
+    // Prevent path traversal for S3 keys as well
+    if (publicId.includes("..") || publicId.includes("~")) {
+      console.warn(`[Security Warning] Attempted path traversal in S3 delete: ${publicId}`);
+      return;
+    }
     const command = new DeleteObjectCommand({
       Bucket: this.bucketName,
       Key: publicId,
     });
 
     await this.s3Client.send(command);
+  }
+
+  extractPublicIdFromUrl(url) {
+    if (!url) return null;
+    if (url.includes(this.bucketName)) {
+      if (url.includes(".amazonaws.com/")) {
+        const parts = url.split(".amazonaws.com/");
+        if (parts.length > 1) return parts[1].split("?")[0];
+      }
+      const parts = url.split(`${this.bucketName}/`);
+      if (parts.length > 1) return parts[1].split("?")[0];
+    }
+    return null;
   }
 }
 

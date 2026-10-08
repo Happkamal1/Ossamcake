@@ -16,6 +16,10 @@ const otpSchema = new mongoose.Schema(
       enum: ["emailVerification", "passwordReset", "login2FA"],
       required: true,
     },
+    attempts: {
+      type: Number,
+      default: 0,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

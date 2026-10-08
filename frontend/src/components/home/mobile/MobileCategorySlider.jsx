@@ -1,17 +1,18 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LayoutGrid } from "lucide-react";
+import { getImageUrl } from "@/lib/api";
 
 const FALLBACK_IMAGES = {
-  "Birthday Cakes": "/images/cakes/custom-birthday.jpg",
-  "Wedding Cakes": "/images/cakes/wedding-elegance.jpg",
-  "Anniversary Cakes": "/images/cakes/chocolate-truffle-delight.png",
-  "Photo Cakes": "/images/cakes/custom-birthday.jpg",
-  "Kids Cakes": "/images/cakes/fruity-berry.jpg",
-  "Premium Cakes": "/images/cakes/ariston-signature.jpg",
+  "Birthday Cakes": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/birthday.png",
+  "Wedding Cakes": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/wedding.png",
+  "Anniversary Cakes": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/anniversary.png",
+  "Photo Cakes": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/photo.png",
+  "Kids Cakes": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/kids.png",
+  "Premium Cakes": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/premium.png",
 };
 
-const DEFAULT_FALLBACK = "/images/cakes/ariston-signature.jpg";
+const DEFAULT_FALLBACK = "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/ariston-signature.jpg";
 
 function MobileCategorySkeleton() {
   return (
@@ -51,7 +52,7 @@ export default function MobileCategorySlider({ categories, loading }) {
                   <div className="h-20 w-20 rounded-full overflow-hidden border border-border/50 bg-card/80 backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.05)] active:scale-95 transition-transform flex items-center justify-center p-0.5 relative">
                     <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/10 to-transparent" />
                     <img
-                      src={imgSrc}
+                      src={getImageUrl(imgSrc)}
                       alt={cat.name}
                       className="h-full w-full object-cover rounded-full z-10"
                       loading="lazy"

@@ -1,14 +1,15 @@
 import { motion } from "framer-motion";
 import { Instagram } from "lucide-react";
+import { getImageUrl } from "@/lib/api";
 
-// Placeholder images for gallery
+// Gallery images loaded from S3
 const GALLERY = [
-  "/images/cakes/chocolate-truffle-delight.png",
-  "/images/cakes/custom-birthday.jpg",
-  "/images/cakes/fruity-berry.jpg",
-  "/images/cakes/wedding-elegance.jpg",
-  "/images/cakes/ariston-signature.jpg",
-  "/images/cakes/red-velvet.jpg"
+  "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/chocolate-truffle-delight.png",
+  "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/custom-birthday.jpg",
+  "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/fruity-berry.jpg",
+  "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/wedding-elegance.jpg",
+  "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/ariston-signature.jpg",
+  "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/red-velvet.jpg"
 ];
 
 export default function InstagramGallery() {
@@ -41,7 +42,7 @@ export default function InstagramGallery() {
               className="snap-start shrink-0 w-[220px] sm:w-auto relative aspect-square overflow-hidden rounded-2xl group cursor-pointer"
             >
               <img 
-                src={img} 
+                src={getImageUrl(img)} 
                 alt={`Instagram gallery ${idx + 1}`} 
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 loading="lazy"

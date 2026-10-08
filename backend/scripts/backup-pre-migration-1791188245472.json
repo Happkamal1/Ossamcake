@@ -1,0 +1,401 @@
+[
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234804",
+    "name": "Double Chocolate Fudge Overload",
+    "original": {
+      "thumbnail": "/images/cakes/chocolate-fudge.jpg",
+      "gallery": [
+        "/images/cakes/chocolate-fudge.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/chocolate-fudge.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/chocolate-fudge.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234814",
+    "name": "Classic Tiered Lace Wedding Cake",
+    "original": {
+      "thumbnail": "/images/cakes/wedding-classic.jpg",
+      "gallery": [
+        "/images/cakes/wedding-classic.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/wedding-classic.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/wedding-classic.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234807",
+    "name": "Summer Berry Chantilly Cream",
+    "original": {
+      "thumbnail": "/images/cakes/fruity-berry.jpg",
+      "gallery": [
+        "/images/cakes/fruity-berry.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/fruity-berry.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/fruity-berry.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234815",
+    "name": "Elegant Pearl Cascading Cake",
+    "original": {
+      "thumbnail": "/images/cakes/wedding-elegance.jpg",
+      "gallery": [
+        "/images/cakes/wedding-elegance.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/wedding-elegance.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/wedding-elegance.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234803",
+    "name": "Traditional Black Forest Gateau",
+    "original": {
+      "thumbnail": "/images/cakes/black-forest.jpg",
+      "gallery": [
+        "/images/cakes/black-forest.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/black-forest.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/black-forest.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234805",
+    "name": "Custom Confetti Birthday Special",
+    "original": {
+      "thumbnail": "/images/cakes/custom-birthday.jpg",
+      "gallery": [
+        "/images/cakes/custom-birthday.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/custom-birthday.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/custom-birthday.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234809",
+    "name": "Passionfruit & White Chocolate Mousse",
+    "original": {
+      "thumbnail": "/images/cakes/fruity-passion.jpg",
+      "gallery": [
+        "/images/cakes/fruity-passion.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/fruity-passion.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/fruity-passion.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234811",
+    "name": "Royal Red Velvet Passion",
+    "original": {
+      "thumbnail": "/images/cakes/red-velvet.jpg",
+      "gallery": [
+        "/images/cakes/red-velvet.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/red-velvet.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/red-velvet.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234817",
+    "name": "Luxury Gold Leaf Ivory Cake",
+    "original": {
+      "thumbnail": "/images/cakes/wedding-season.jpg",
+      "gallery": [
+        "/images/cakes/wedding-season.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/wedding-season.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/wedding-season.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234802",
+    "name": "Luxury Chocolate Truffle Delight",
+    "original": {
+      "thumbnail": "/images/cakes/chocolate-truffle-delight.png",
+      "gallery": [
+        "/images/cakes/chocolate-truffle-delight.png"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/chocolate-truffle-delight.png",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/chocolate-truffle-delight.png"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234806",
+    "name": "Fresh Tropical Fruit Medley",
+    "original": {
+      "thumbnail": "/images/cakes/fruity-delight.jpg",
+      "gallery": [
+        "/images/cakes/fruity-delight.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/fruity-delight.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/fruity-delight.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234808",
+    "name": "Alphonso Mango Dream Cake",
+    "original": {
+      "thumbnail": "/images/cakes/fruity-mango.jpg",
+      "gallery": [
+        "/images/cakes/fruity-mango.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/fruity-mango.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/fruity-mango.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234816",
+    "name": "Secret Garden Floral Tier",
+    "original": {
+      "thumbnail": "/images/cakes/wedding-garden.jpg",
+      "gallery": [
+        "/images/cakes/wedding-garden.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/wedding-garden.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/wedding-garden.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234801",
+    "name": "Ariston Premium Signature Cake",
+    "original": {
+      "thumbnail": "/images/cakes/ariston-signature.jpg",
+      "gallery": [
+        "/images/cakes/ariston-signature.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/ariston-signature.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/ariston-signature.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234810",
+    "name": "Lemon Zest Strawberry Bliss",
+    "original": {
+      "thumbnail": "/images/cakes/lemon-strawberry.jpg",
+      "gallery": [
+        "/images/cakes/lemon-strawberry.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/lemon-strawberry.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/lemon-strawberry.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234813",
+    "name": "Gourmet Vanilla Bean Dream",
+    "original": {
+      "thumbnail": "/images/cakes/vanilla-bean.jpg",
+      "gallery": [
+        "/images/cakes/vanilla-bean.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/vanilla-bean.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/vanilla-bean.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Cake",
+    "documentId": "64b0f1a9d8a3f8c8b1234812",
+    "name": "Classic Strawberry Shortcake",
+    "original": {
+      "thumbnail": "/images/cakes/strawberry-bliss.jpg",
+      "gallery": [
+        "/images/cakes/strawberry-bliss.jpg"
+      ]
+    },
+    "proposedUpdate": {
+      "thumbnail": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/strawberry-bliss.jpg",
+      "gallery": [
+        "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/strawberry-bliss.jpg"
+      ]
+    }
+  },
+  {
+    "collection": "Category",
+    "documentId": "64b0f1a9d8a3f8c8b1234505",
+    "name": "Kids Cakes",
+    "original": {
+      "image": "/images/categories/kids.png"
+    },
+    "proposedUpdate": {
+      "image": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/kids.png"
+    }
+  },
+  {
+    "collection": "Category",
+    "documentId": "64b0f1a9d8a3f8c8b1234501",
+    "name": "Birthday Cakes",
+    "original": {
+      "image": "/images/categories/birthday.png"
+    },
+    "proposedUpdate": {
+      "image": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/birthday.png"
+    }
+  },
+  {
+    "collection": "Category",
+    "documentId": "64b0f1a9d8a3f8c8b1234503",
+    "name": "Anniversary Cakes",
+    "original": {
+      "image": "/images/categories/anniversary.png"
+    },
+    "proposedUpdate": {
+      "image": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/anniversary.png"
+    }
+  },
+  {
+    "collection": "Category",
+    "documentId": "64b0f1a9d8a3f8c8b1234506",
+    "name": "Premium Cakes",
+    "original": {
+      "image": "/images/categories/premium.png"
+    },
+    "proposedUpdate": {
+      "image": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/premium.png"
+    }
+  },
+  {
+    "collection": "Category",
+    "documentId": "64b0f1a9d8a3f8c8b1234502",
+    "name": "Wedding Cakes",
+    "original": {
+      "image": "/images/categories/wedding.png"
+    },
+    "proposedUpdate": {
+      "image": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/wedding.png"
+    }
+  },
+  {
+    "collection": "Category",
+    "documentId": "64b0f1a9d8a3f8c8b1234504",
+    "name": "Photo Cakes",
+    "original": {
+      "image": "/images/categories/photo.png"
+    },
+    "proposedUpdate": {
+      "image": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/photo.png"
+    }
+  },
+  {
+    "collection": "Occasion",
+    "documentId": "64b0f1a9d8a3f8c8b1234601",
+    "name": "Birthday",
+    "original": {
+      "image": "/images/occasions/birthday.png"
+    },
+    "proposedUpdate": {
+      "image": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/occasions/birthday.png"
+    }
+  },
+  {
+    "collection": "Occasion",
+    "documentId": "64b0f1a9d8a3f8c8b1234602",
+    "name": "Anniversary",
+    "original": {
+      "image": "/images/occasions/anniversary.png"
+    },
+    "proposedUpdate": {
+      "image": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/occasions/anniversary.png"
+    }
+  },
+  {
+    "collection": "Occasion",
+    "documentId": "64b0f1a9d8a3f8c8b1234603",
+    "name": "Wedding",
+    "original": {
+      "image": "/images/occasions/wedding.png"
+    },
+    "proposedUpdate": {
+      "image": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/occasions/wedding.png"
+    }
+  },
+  {
+    "collection": "Occasion",
+    "documentId": "64b0f1a9d8a3f8c8b1234604",
+    "name": "Kids Celebration",
+    "original": {
+      "image": "/images/occasions/kids.png"
+    },
+    "proposedUpdate": {
+      "image": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/occasions/kids.png"
+    }
+  }
+]

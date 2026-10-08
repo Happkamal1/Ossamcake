@@ -13,9 +13,21 @@ if (!fs.existsSync(uploadDir)) {
 
 // Helper to determine storage
 const getStorage = (diskConfig) => {
-  if (process.env.STORAGE_DRIVER === "s3") {
+  const driver = process.env.STORAGE_DRIVER || "local";
+  
+  if (driver === "s3") {
+    if (!process.env.AWS_REGION || !process.env.S3_BUCKET_NAME) {
+      console.error("FATAL: STORAGE_DRIVER=s3 but AWS_REGION or S3_BUCKET_NAME is missing.");
+      process.exit(1);
+    }
     return multer.memoryStorage();
   }
+  
+  if (process.env.NODE_ENV === "production" && driver !== "local") {
+    console.error("FATAL: Production environment detected but STORAGE_DRIVER is not explicitly s3. Do not fallback to local disk in production silently.");
+    process.exit(1);
+  }
+  
   return multer.diskStorage(diskConfig);
 };
 

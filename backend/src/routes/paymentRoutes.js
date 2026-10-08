@@ -3,9 +3,13 @@ const router = express.Router();
 const {
   getConfigStatus,
   getRazorpayKey,
+  getStripeKey,
   createPaymentOrder,
   verifyPayment,
   handlePaymentFailure,
+  createStripeIntent,
+  confirmStripePayment,
+  handleStripeWebhook,
   getPaymentStatus,
   getPaymentHistory,
   handleWebhook,
@@ -41,13 +45,41 @@ router.get("/config", getConfigStatus);
 router.get("/key", getRazorpayKey);
 
 /**
+ * @route   GET /api/v1/payments/stripe/key
+ * @desc    Get Stripe Publishable Key for frontend
+ * @access  Public
+ */
+router.get("/stripe/key", getStripeKey);
+
+/**
  * @route   POST /api/v1/payments/webhook
  * @desc    Handle Razorpay webhooks
  * @access  Public (signature verified internally)
  */
 router.post("/webhook", validateWebhook, validate, handleWebhook);
 
+/**
+ * @route   POST /api/v1/payments/stripe/webhook
+ * @desc    Handle Stripe webhooks
+ * @access  Public (signature verified internally)
+ */
+router.post("/stripe/webhook", handleStripeWebhook);
+
 // ===== Protected Routes (Require Authentication) =====
+
+/**
+ * @route   POST /api/v1/payments/stripe/create-intent
+ * @desc    Create Stripe PaymentIntent
+ * @access  Protected
+ */
+router.post("/stripe/create-intent", protect, createStripeIntent);
+
+/**
+ * @route   POST /api/v1/payments/stripe/confirm
+ * @desc    Confirm Stripe Payment / Check payment intent status
+ * @access  Protected
+ */
+router.post("/stripe/confirm", protect, confirmStripePayment);
 
 /**
  * @route   POST /api/v1/payments/create-order

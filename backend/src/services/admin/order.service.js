@@ -27,6 +27,7 @@ const getAllOrders = async (query = {}) => {
   const [orders, total] = await Promise.all([
     Order.find(filter)
       .populate("user", "name email mobileNumber")
+      .populate("paymentTransaction")
       .sort(sort)
       .skip(skip)
       .limit(limit)
@@ -38,7 +39,10 @@ const getAllOrders = async (query = {}) => {
 };
 
 const getOrderById = async (id) => {
-  const order = await Order.findById(id).populate("user", "name email mobileNumber").lean();
+  const order = await Order.findById(id)
+    .populate("user", "name email mobileNumber")
+    .populate("paymentTransaction")
+    .lean();
   if (!order) throw new ApiError(404, "Order not found");
   return order;
 };

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,23 +30,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-
-const loadRazorpayScript = () => {
-  return new Promise((resolve) => {
-    if (window.Razorpay) {
-      resolve(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-};
+import paymentService from "@/services/paymentService";
 
 export default function Checkout() {
-  const { cartItems, getCart, subtotal, discountAmount, deliveryCharge, grandTotal, clearCart, coupon } = useCart();
+  const { cartItems, getCart, subtotal, discountAmount, deliveryCharge, taxAmount, grandTotal, clearCart, coupon } = useCart();
+  const { settings } = useSelector((state) => state.siteSettings);
+  const freeShippingThreshold = settings?.shipping?.freeShippingThreshold ?? 800;
   const navigate = useNavigate();
 
   // Wizard Steps: "address" -> "delivery" -> "payment" -> "review" -> "success" | "failed"
@@ -75,8 +65,8 @@ export default function Checkout() {
   const [deliveryDate, setDeliveryDate] = useState("");
   const [deliveryTimeSlot, setDeliveryTimeSlot] = useState("Afternoon (12 PM - 4 PM)");
 
-  // Payment states
-  const [paymentMethod, setPaymentMethod] = useState("cod");
+  // Payment states: "razorpay" | "cod"
+  const [paymentMethod, setPaymentMethod] = useState("razorpay");
 
   // Loading States
   const [loading, setLoading] = useState(false);
@@ -232,6 +222,10 @@ export default function Checkout() {
     });
   };
 
+  const handleProceedToReview = () => {
+    setStep("review");
+  };
+
   const handlePlaceOrder = async () => {
     setLoading(true);
     const shipping = getShippingPayload();
@@ -257,85 +251,48 @@ export default function Checkout() {
         toast.success("Order Placed Successfully!");
       } 
       // Online Razorpay Payment Path
-      else {
+      else if (paymentMethod === "razorpay" || paymentMethod === "card") {
         // 2. Create Razorpay Payment Order on Backend
-        const paymentRes = await axios.post(
-          `${API_BASE_URL}/payment/create-order`,
-          {
-            orderId: createdOrder.order._id,
-          },
-          { withCredentials: true }
+        const paymentOrderData = await paymentService.createPaymentOrder(
+          createdOrder.order._id
         );
 
-        const paymentOrderData = paymentRes.data?.data;
-
-        // 3. Load Razorpay Checkout Script and Trigger Modal
-        const scriptLoaded = await loadRazorpayScript();
-        if (!scriptLoaded) {
-          toast.error("Failed to load Razorpay payment sheet. Please check your connection.");
-          setLoading(false);
-          return;
-        }
-
-        const options = {
-          key: paymentOrderData.keyId,
+        // 3. Open Razorpay Checkout Modal
+        await paymentService.openRazorpay({
+          orderId: paymentOrderData.orderId,
           amount: paymentOrderData.amount,
           currency: paymentOrderData.currency,
-          name: "Happkamal Sweet Bakery",
-          description: `Payment for Order #${paymentOrderData.orderNumber}`,
-          order_id: paymentOrderData.orderId,
-          handler: async function (response) {
-            try {
-              setLoading(true);
-              // Verify signature on backend
-              await axios.post(
-                `${API_BASE_URL}/payment/verify`,
-                {
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                },
-                { withCredentials: true }
-              );
-
-              setOrderId(paymentOrderData.orderNumber);
-              await clearCart();
-              setStep("success");
-              toast.success("Payment verified! Order placed successfully.");
-            } catch (err) {
-              setStep("failed");
-              toast.error(err.response?.data?.message || "Payment signature verification failed.");
-            } finally {
-              setLoading(false);
-            }
-          },
-          prefill: {
+          orderNumber: paymentOrderData.orderNumber,
+          userDetails: {
             name: shipping.name,
-            contact: shipping.phone,
+            phone: shipping.phone,
           },
-          theme: {
-            color: "#db2777",
+          onSuccess: async () => {
+            setOrderId(paymentOrderData.orderNumber);
+            await clearCart();
+            setStep("success");
+            toast.success("Payment verified! Order placed successfully.");
+            setLoading(false);
           },
-          modal: {
-            ondismiss: function () {
-              setLoading(false);
-              toast.warning("Payment sheet closed. Complete payment to place order.");
-            }
-          }
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.open();
+          onFailure: (err) => {
+            setStep("failed");
+            toast.error(err?.message || "Payment verification failed.");
+            setLoading(false);
+          },
+          onDismiss: () => {
+            setLoading(false);
+            toast.warning("Payment sheet closed. Complete payment to place order.");
+          },
+        });
       }
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || "Failed to process order.");
+      toast.error(err.response?.data?.message || err.message || "Failed to process order.");
       setLoading(false);
     }
   };
 
   const selectedShipping = getShippingPayload() || {};
-  const currentGrandTotal = subtotal - discountAmount + (subtotal >= 800 ? 0 : 99) + (subtotal * 0.05);
 
   return (
     <div className="bg-background min-h-screen py-12">
@@ -784,49 +741,93 @@ export default function Checkout() {
                     exit={{ opacity: 0 }}
                     className="bg-card rounded-3xl border border-border shadow-sm p-6 text-left space-y-6"
                   >
-                    <h3 className="font-extrabold text-foreground text-lg flex items-center gap-2 border-b border-border pb-3">
-                      <CreditCard className="h-5 w-5 text-pink-600" /> 3. Select Payment Option
-                    </h3>
+                    <div className="border-b border-border pb-3">
+                      <h3 className="font-extrabold text-foreground text-lg flex items-center gap-2">
+                        <CreditCard className="h-5 w-5 text-pink-600" /> 3. Select Payment Method
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Choose your preferred payment method. We support fast Indian UPI apps, cards, and netbanking via Razorpay, and Cash on Delivery.
+                      </p>
+                    </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Razorpay Online Option */}
+                      {/* 1. Razorpay Option (Primary Indian UPI / Cards) */}
                       <button
                         type="button"
-                        onClick={() => setPaymentMethod("card")}
-                        className={`p-6 rounded-2xl border text-left flex flex-col justify-between h-36 transition-all ${
-                          paymentMethod === "card"
-                            ? "border-pink-600 bg-pink-50/15 shadow-md shadow-pink-600/5"
+                        onClick={() => setPaymentMethod("razorpay")}
+                        className={`p-5 rounded-2xl border text-left flex flex-col justify-between h-48 transition-all relative ${
+                          paymentMethod === "razorpay" || paymentMethod === "card"
+                            ? "border-pink-600 bg-pink-50/15 shadow-md shadow-pink-600/5 ring-2 ring-pink-500/20"
                             : "border-border bg-card hover:bg-secondary/40"
                         }`}
                       >
-                        <div className="h-10 w-10 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 flex items-center justify-center">
-                          <CreditCard className="h-5 w-5" />
+                        <div className="flex items-center justify-between w-full">
+                          <div className="h-10 w-10 rounded-xl bg-pink-100 dark:bg-pink-900/30 text-pink-600 flex items-center justify-center">
+                            <Sparkles className="h-5 w-5" />
+                          </div>
+                          <span className="text-[9px] font-black uppercase bg-pink-100 dark:bg-pink-950 text-pink-700 dark:text-pink-300 px-2 py-0.5 rounded-md">
+                            Fast UPI / Cards
+                          </span>
                         </div>
                         <div>
-                          <div className="text-xs font-black text-foreground mb-1">Razorpay Online Payment</div>
-                          <p className="text-[10px] text-muted-foreground">Pay securely via Credit/Debit Cards, UPI, NetBanking, or Mobile Wallets.</p>
+                          <div className="text-xs font-black text-foreground mb-1">Razorpay (Online Payment)</div>
+                          <p className="text-[10px] text-muted-foreground leading-relaxed">
+                            Google Pay, PhonePe, Paytm, QR code, NetBanking, and credit/debit cards.
+                          </p>
                         </div>
                       </button>
 
-                      {/* Cash On Delivery Option */}
+                      {/* 2. Cash On Delivery Option */}
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("cod")}
-                        className={`p-6 rounded-2xl border text-left flex flex-col justify-between h-36 transition-all ${
+                        className={`p-5 rounded-2xl border text-left flex flex-col justify-between h-48 transition-all ${
                           paymentMethod === "cod"
-                            ? "border-pink-600 bg-pink-50/15 shadow-md shadow-pink-600/5"
+                            ? "border-pink-600 bg-pink-50/15 shadow-md shadow-pink-600/5 ring-2 ring-pink-500/20"
                             : "border-border bg-card hover:bg-secondary/40"
                         }`}
                       >
-                        <div className="h-10 w-10 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-600 flex items-center justify-center">
-                          <Landmark className="h-5 w-5" />
+                        <div className="flex items-center justify-between w-full">
+                          <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center">
+                            <Landmark className="h-5 w-5" />
+                          </div>
+                          <span className="text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md">
+                            Pay on Delivery
+                          </span>
                         </div>
                         <div>
                           <div className="text-xs font-black text-foreground mb-1">Cash on Delivery (COD)</div>
-                          <p className="text-[10px] text-muted-foreground">Confirm order now and settle payments in cash at your doorstep.</p>
+                          <p className="text-[10px] text-muted-foreground leading-relaxed">
+                            Confirm order now and settle payment in cash upon doorstep delivery.
+                          </p>
                         </div>
                       </button>
                     </div>
+
+                    {/* Razorpay Test Mode Helper */}
+                    {(paymentMethod === "razorpay" || paymentMethod === "card") && (import.meta.env.VITE_RAZORPAY_KEY_ID || "").startsWith("rzp_test_") && (
+                      <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-200 text-xs space-y-2">
+                        <div className="font-bold flex items-center gap-1.5 text-amber-900 dark:text-amber-100">
+                          <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                          Razorpay Test Mode Active
+                        </div>
+                        <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                          Do <strong>NOT</strong> enter your real personal card! In the Razorpay popup, use official test credentials:
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
+                          <div className="p-2.5 bg-background/90 rounded-xl border border-amber-200 dark:border-amber-900/40">
+                            <span className="text-muted-foreground block text-[10px] font-sans font-semibold">Test UPI Simulation</span>
+                            <span className="font-bold select-all text-pink-600">success@razorpay</span>
+                            <span className="text-muted-foreground block text-[10px] font-sans">Simulates instant approval</span>
+                          </div>
+                          <div className="p-2.5 bg-background/90 rounded-xl border border-amber-200 dark:border-amber-900/40">
+                            <span className="text-muted-foreground block text-[10px] font-sans font-semibold">Test Card (Success)</span>
+                            <span className="font-bold select-all text-pink-600">4111 1111 1111 1111</span>
+                            <span className="text-muted-foreground block text-[10px] font-sans">Expiry: Future date | CVV: 123</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="flex justify-between pt-4 border-t border-border">
                       <Button 
@@ -837,8 +838,8 @@ export default function Checkout() {
                         Back
                       </Button>
                       <Button 
-                        onClick={() => setStep("review")}
-                        className="bg-pink-600 hover:bg-pink-700 text-white font-bold rounded-xl px-6 py-5 text-xs flex items-center gap-1"
+                        onClick={handleProceedToReview}
+                        className="bg-pink-600 hover:bg-pink-700 text-white font-bold rounded-xl px-6 py-5 text-xs flex items-center gap-1 shadow-md shadow-pink-600/10"
                       >
                         Review Order <ArrowRight className="h-4 w-4" />
                       </Button>
@@ -846,7 +847,7 @@ export default function Checkout() {
                   </motion.div>
                 )}
 
-                {/* Step 4: Final Order Review */}
+                {/* Step 4: Final Order Review & Payment Execution */}
                 {step === "review" && (
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
@@ -866,7 +867,9 @@ export default function Checkout() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-foreground">Date: {new Date().toLocaleDateString("en-IN")}</p>
-                        <p className="text-muted-foreground uppercase text-[10px] font-bold">Payment Method: {paymentMethod}</p>
+                        <p className="text-pink-600 uppercase text-[10px] font-black">
+                          Payment Gateway: {paymentMethod === "cod" ? "Cash on Delivery" : "Razorpay (Online Payment / UPI / Cards)"}
+                        </p>
                       </div>
                     </div>
 
@@ -929,7 +932,7 @@ export default function Checkout() {
                       </div>
                     </div>
 
-                    {/* Final Actions */}
+                    {/* Final Actions for COD / Razorpay */}
                     <div className="flex justify-between pt-6 border-t border-border">
                       <Button 
                         onClick={() => setStep("payment")}
@@ -943,7 +946,11 @@ export default function Checkout() {
                         disabled={loading}
                         className="bg-pink-600 hover:bg-pink-700 text-white font-bold rounded-xl px-10 py-6 text-sm shadow-md shadow-pink-600/10"
                       >
-                        {loading ? "Processing Order..." : paymentMethod === "cod" ? "Confirm & Place COD Order" : "Initiate Online Payment"}
+                        {loading
+                          ? "Processing Order..."
+                          : paymentMethod === "cod"
+                          ? "Confirm & Place COD Order"
+                          : `Pay ₹${grandTotal.toFixed(2)} with Razorpay`}
                       </Button>
                     </div>
                   </motion.div>
@@ -988,12 +995,12 @@ export default function Checkout() {
                     <div className="flex justify-between">
                       <span>Delivery Charge</span>
                       <span className="font-semibold text-foreground">
-                        {subtotal >= 800 ? <strong className="text-green-600 uppercase font-black">Free</strong> : "₹99.00"}
+                        {deliveryCharge === 0 ? <strong className="text-green-600 uppercase font-black">Free</strong> : `₹${deliveryCharge.toFixed(2)}`}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Estimated Tax (5%)</span>
-                      <span className="font-semibold text-foreground">₹{(subtotal * 0.05).toFixed(2)}</span>
+                      <span className="font-semibold text-foreground">₹{taxAmount.toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -1001,12 +1008,12 @@ export default function Checkout() {
 
                   <div className="flex justify-between text-base font-black text-foreground">
                     <span>Grand Total</span>
-                    <span className="text-pink-600 text-lg font-black">₹{currentGrandTotal.toFixed(2)}</span>
+                    <span className="text-pink-600 text-lg font-black">₹{grandTotal.toFixed(2)}</span>
                   </div>
 
-                  {subtotal < 800 && (
+                  {subtotal < freeShippingThreshold && (
                     <p className="text-[10px] text-muted-foreground bg-secondary p-3 rounded-xl border border-border text-center leading-relaxed">
-                      💡 Add only <strong className="text-pink-600">₹{(800 - subtotal).toFixed(2)}</strong> more to unlock <strong>FREE DELIVERY</strong>!
+                      💡 Add only <strong className="text-pink-600">₹{(freeShippingThreshold - subtotal).toFixed(2)}</strong> more to unlock <strong>FREE DELIVERY</strong>!
                     </p>
                   )}
                 </div>

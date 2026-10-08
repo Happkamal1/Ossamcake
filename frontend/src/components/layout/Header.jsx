@@ -19,23 +19,39 @@ import UserDropdown from "./Header/UserDropdown";
 import ThemeSwitcher from "@/components/shared/ThemeSwitcher";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
+import { useSelector } from "react-redux";
+
 export default function Header() {
   const { cartItems } = useCart();
   const { wishlistItems } = useWishlist();
   const { user, logout } = useAuth();
+  const { settings } = useSelector((state) => state.siteSettings);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
 
   const totalCartQty = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const announcement = settings?.announcement || {
+    enabled: true,
+    text: "Free delivery on orders over ₹800! Use code WELCOME10 for 10% off",
+    link: "/offers",
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-colors duration-500">
       {/* Top Announcement Bar */}
-      <div className="bg-primary text-primary-foreground text-center py-1.5 sm:py-2 px-3 sm:px-4 text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 tracking-wide transition-colors duration-500">
-        <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-bounce text-accent flex-shrink-0" />
-        <span>Free delivery on orders over $80! Use code <strong className="underline text-accent">WELCOME10</strong> for 10% off</span>
-      </div>
+      {announcement.enabled && (
+        <div className="bg-primary text-primary-foreground text-center py-1.5 sm:py-2 px-3 sm:px-4 text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 tracking-wide transition-colors duration-500">
+          <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-bounce text-accent flex-shrink-0" />
+          {announcement.link ? (
+            <Link to={announcement.link} className="hover:underline flex items-center gap-1">
+              <span>{announcement.text}</span>
+            </Link>
+          ) : (
+            <span>{announcement.text}</span>
+          )}
+        </div>
+      )}
 
       {/* Main Navbar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">

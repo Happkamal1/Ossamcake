@@ -7,6 +7,9 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { getImageUrl } from "@/lib/api";
+
+const FALLBACK_CAKE = "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/custom-birthday.jpg";
 
 export default function WishlistGrid() {
   const { wishlistItems, getWishlist, toggleWishlist } = useWishlist();
@@ -55,7 +58,7 @@ export default function WishlistGrid() {
               >
                 <div className="relative overflow-hidden aspect-video">
                   <img 
-                    src={cake.image || cake.thumbnail || "/images/cakes/custom-birthday.jpg"} 
+                    src={getImageUrl(cake.image || cake.thumbnail, FALLBACK_CAKE)} 
                     alt={cake.name} 
                     className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" 
                   />

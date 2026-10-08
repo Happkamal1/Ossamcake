@@ -15,6 +15,9 @@ const PAGE_TITLES = {
   "/admin/coupons":       "Coupons",
   "/admin/banners":       "Banners",
   "/admin/notifications": "Notifications",
+  "/admin/faqs":          "FAQs",
+  "/admin/testimonials":   "Testimonials",
+  "/admin/site-settings":  "Site Settings",
 };
 
 export default function AdminLayout() {

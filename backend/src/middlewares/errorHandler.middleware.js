@@ -56,11 +56,16 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // ── Production: clean response ───────────────────────────────────────────────
+  if (!error.isOperational) {
+    // Log non-operational errors internally for debugging, but don't expose
+    console.error("CRITICAL UNHANDLED ERROR:", err);
+  }
+
   res.status(error.statusCode).json({
     success: false,
     statusCode: error.statusCode,
-    message: error.message || "Internal Server Error",
-    errors: error.errors || [],
+    message: error.isOperational ? error.message : "Internal Server Error",
+    errors: error.isOperational ? (error.errors || []) : [],
   });
 };
 

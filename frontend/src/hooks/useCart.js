@@ -10,6 +10,7 @@ import {
   selectSubtotal,
   selectDiscountAmount,
   selectDeliveryCharge,
+  selectTaxAmount,
   selectGrandTotal,
   fetchCart
 } from "@/features/cart/cartSlice";
@@ -22,6 +23,7 @@ export function useCart() {
   const subtotal = useSelector(selectSubtotal);
   const discountAmount = useSelector(selectDiscountAmount);
   const deliveryCharge = useSelector(selectDeliveryCharge);
+  const taxAmount = useSelector(selectTaxAmount);
   const grandTotal = useSelector(selectGrandTotal);
 
   const getCart = () => dispatch(fetchCart());
@@ -47,6 +49,7 @@ export function useCart() {
     subtotal,
     discountAmount,
     deliveryCharge,
+    taxAmount,
     grandTotal,
     getCart,
     addToCart,

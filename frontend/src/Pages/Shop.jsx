@@ -36,7 +36,7 @@ export default function Shop() {
   const [selectedCategory, setSelectedCategory] = useState(categoryParam);
   const [selectedFlavor, setSelectedFlavor] = useState("All Flavors");
   const [searchQuery, setSearchQuery] = useState(searchParam);
-  const [priceRange, setPriceRange] = useState([300]); // Max price upper cap (default 300)
+  const [priceRange, setPriceRange] = useState([3000]); // Max price upper cap (default 3000)
   const [sortBy, setSortBy] = useState("rating-desc");
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
@@ -74,7 +74,7 @@ export default function Shop() {
     setSelectedCategory("All Cakes");
     setSelectedFlavor("All Flavors");
     setSearchQuery("");
-    setPriceRange([300]);
+    setPriceRange([3000]);
     setSortBy("rating-desc");
     setSearchParams({});
   };

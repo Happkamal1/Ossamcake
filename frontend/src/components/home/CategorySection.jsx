@@ -2,18 +2,19 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { LayoutGrid } from "lucide-react";
+import { getImageUrl } from "@/lib/api";
 
-// Fallback local images used only when DB category has no image
+// Fallback images used only when DB category has no image
 const FALLBACK_IMAGES = {
-  "Birthday Cakes": "/images/cakes/custom-birthday.jpg",
-  "Wedding Cakes": "/images/cakes/wedding-elegance.jpg",
-  "Anniversary Cakes": "/images/cakes/chocolate-truffle-delight.png",
-  "Photo Cakes": "/images/cakes/custom-birthday.jpg",
-  "Kids Cakes": "/images/cakes/fruity-berry.jpg",
-  "Premium Cakes": "/images/cakes/ariston-signature.jpg",
+  "Birthday Cakes": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/birthday.png",
+  "Wedding Cakes": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/wedding.png",
+  "Anniversary Cakes": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/anniversary.png",
+  "Photo Cakes": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/photo.png",
+  "Kids Cakes": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/kids.png",
+  "Premium Cakes": "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/categories/premium.png",
 };
 
-const DEFAULT_FALLBACK = "/images/cakes/ariston-signature.jpg";
+const DEFAULT_FALLBACK = "https://ossamcake-images-713877988783-ap-south-1-an.s3.ap-south-1.amazonaws.com/products/ariston-signature.jpg";
 
 // Skeleton card shown while loading
 function CategorySkeleton() {
@@ -61,7 +62,7 @@ export default function CategorySection() {
                   <Link to={`/shop?category=${encodeURIComponent(cat.name)}`} className="space-y-4 text-center w-full">
                     <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full overflow-hidden border-2 border-primary/20 mx-auto bg-secondary flex items-center justify-center">
                       <img
-                        src={imgSrc}
+                        src={getImageUrl(imgSrc)}
                         alt={cat.name}
                         className="h-full w-full object-cover hover:scale-110 transition-transform duration-500"
                         loading="lazy"

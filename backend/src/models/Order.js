@@ -56,7 +56,11 @@ const orderSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-      enum: ["card", "cod", "upi"],
+      default: "cod",
+    },
+    paymentProvider: {
+      type: String,
+      enum: ["razorpay", "stripe", "cod"],
       default: "cod",
     },
     paymentStatus: {
@@ -83,6 +87,7 @@ const orderSchema = new mongoose.Schema(
     razorpayOrderId: { type: String, default: "" },
     razorpayPaymentId: { type: String, default: "" },
     razorpaySignature: { type: String, default: "" },
+    stripePaymentIntentId: { type: String, default: "" },
 
     // Payment transaction reference
     paymentTransaction: {
@@ -91,11 +96,15 @@ const orderSchema = new mongoose.Schema(
       default: null
     },
 
-    // Pricing breakdown — mirrors Checkout.jsx calculations
+    // Pricing breakdown — authoritative server calculations
     subtotal: { type: Number, required: true },
     discountAmount: { type: Number, default: 0 },
+    discount: { type: Number, default: 0 }, // Alias for discountAmount
+    couponDiscount: { type: Number, default: 0 }, // Alias for discountAmount
     deliveryCharge: { type: Number, default: 0 },
+    shipping: { type: Number, default: 0 }, // Alias for deliveryCharge
     taxAmount: { type: Number, default: 0 },
+    tax: { type: Number, default: 0 }, // Alias for taxAmount
     grandTotal: { type: Number, required: true },
 
     appliedCoupon: { type: String, default: "" },
@@ -104,14 +113,23 @@ const orderSchema = new mongoose.Schema(
     invoiceNumber: { type: String, unique: true, sparse: true },
     invoiceDate: { type: Date },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
 
-orderSchema.pre("save", function (next) {
+orderSchema.pre("save", function () {
   if (!this.orderNumber) {
     const rand = Math.floor(100000 + Math.random() * 900000);
     this.orderNumber = `ORD-${rand}`;
   }
+  // Synchronize pricing aliases
+  if (this.discount === undefined || this.discount === 0) this.discount = this.discountAmount || 0;
+  if (this.couponDiscount === undefined || this.couponDiscount === 0) this.couponDiscount = this.discountAmount || 0;
+  if (this.shipping === undefined || this.shipping === 0) this.shipping = this.deliveryCharge || 0;
+  if (this.tax === undefined || this.tax === 0) this.tax = this.taxAmount || 0;
 });
 
 module.exports = mongoose.model("Order", orderSchema);

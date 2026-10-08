@@ -1,10 +1,17 @@
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { CakeSlice, Mail, MapPin, Phone, Send } from "lucide-react";
 
 export default function Contact() {
+  const { settings } = useSelector((state) => state.siteSettings);
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [sent, setSent] = useState(false);
+
+  const address = settings?.address || "123 Baker Street, New York, NY 10001";
+  const phone = settings?.phone || "+1 (555) 123-4567";
+  const email = settings?.email || "hello@ossamcake.com";
+  const workingHours = settings?.workingHours || "Mon - Sun: 8:00 AM - 10:00 PM";
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -40,9 +47,9 @@ export default function Contact() {
               <h2 className="text-2xl font-bold text-foreground mb-6">Contact Information</h2>
               <div className="flex flex-col gap-5">
                 {[
-                  { icon: MapPin, label: "Address", value: "123 Baker Street, New York, NY 10001" },
-                  { icon: Phone, label: "Phone", value: "+1 (555) 123-4567" },
-                  { icon: Mail, label: "Email", value: "hello@ossamcake.com" },
+                  { icon: MapPin, label: "Address", value: address },
+                  { icon: Phone, label: "Phone", value: phone },
+                  { icon: Mail, label: "Email", value: email },
                 ].map(({ icon: Icon, label, value }) => (
                   <div key={label} className="flex items-start gap-4">
                     <div className="flex-shrink-0 h-10 w-10 rounded-full bg-secondary flex items-center justify-center">

@@ -4,6 +4,7 @@ import { fetchAdminOccasions, createOccasion, updateOccasion, deleteOccasion } f
 import ConfirmModal from "@/components/admin/ConfirmModal";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { getImageUrl } from "@/lib/api";
 
 export default function AdminOccasions() {
   const dispatch = useDispatch();
@@ -20,6 +21,9 @@ export default function AdminOccasions() {
     if (!name.trim()) return;
 
     const data = { name, displayOrder: Number(displayOrder) };
+    if (editing?.image) {
+      data.image = editing.image;
+    }
     let res;
     if (editing) {
       res = await dispatch(updateOccasion({ id: editing._id, data }));
@@ -70,7 +74,7 @@ export default function AdminOccasions() {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                {["Name", "Slug", "Order", "Status", "Actions"].map(h => (
+                {["Image", "Name", "Slug", "Order", "Status", "Actions"].map(h => (
                   <th key={h} className="text-left text-xs font-bold text-slate-500 px-5 py-3">{h}</th>
                 ))}
               </tr>
@@ -78,6 +82,15 @@ export default function AdminOccasions() {
             <tbody>
               {occasions.map(occ => (
                 <tr key={occ._id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <td className="px-5 py-3.5">
+                    {occ.image ? (
+                      <img src={getImageUrl(occ.image)} alt={occ.name} className="w-9 h-9 rounded-xl object-cover bg-slate-100 border border-slate-200" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-xs text-slate-400 font-bold">
+                        {occ.name.charAt(0)}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-5 py-3.5 font-semibold text-slate-800">{occ.name}</td>
                   <td className="px-5 py-3.5 text-slate-500 font-mono text-xs">{occ.slug}</td>
                   <td className="px-5 py-3.5 text-slate-600">{occ.displayOrder || 0}</td>
@@ -106,6 +119,15 @@ export default function AdminOccasions() {
       <div className="bg-white rounded-2xl border border-slate-200 p-5 h-fit sticky top-6">
         <h3 className="text-base font-bold text-slate-800 mb-4">{editing ? "Edit Occasion" : "Add New Occasion"}</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {editing?.image && (
+            <div>
+              <label className="text-xs font-bold text-slate-600 mb-1 block">Occasion Image</label>
+              <div className="flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <img src={getImageUrl(editing.image)} alt={editing.name} className="w-12 h-12 rounded-lg object-cover bg-white border border-slate-200" />
+                <p className="text-[11px] text-slate-500 font-mono truncate max-w-[180px]">{editing.image}</p>
+              </div>
+            </div>
+          )}
           <div>
             <label className="text-xs font-bold text-slate-600 mb-1 block">Occasion Name *</label>
             <input required value={name} onChange={e => setName(e.target.value)}

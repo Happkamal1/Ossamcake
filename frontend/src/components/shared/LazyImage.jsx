@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getImageUrl } from "@/lib/api";
 
 export default function LazyImage({ src, alt, className = "", ...props }) {
   const [loaded, setLoaded] = useState(false);
@@ -6,10 +7,19 @@ export default function LazyImage({ src, alt, className = "", ...props }) {
 
   useEffect(() => {
     setLoaded(false);
+    const resolvedUrl = getImageUrl(src);
+    if (!resolvedUrl) {
+      setCurrentSrc("");
+      return;
+    }
     const img = new Image();
-    img.src = src;
+    img.src = resolvedUrl;
     img.onload = () => {
-      setCurrentSrc(src);
+      setCurrentSrc(resolvedUrl);
+      setLoaded(true);
+    };
+    img.onerror = () => {
+      setCurrentSrc(resolvedUrl);
       setLoaded(true);
     };
   }, [src]);

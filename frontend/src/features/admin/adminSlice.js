@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
   dashboardApi, productsApi, categoriesApi, occasionsApi, cakeTypesApi,
-  ordersApi, usersAdminApi, reviewsApi, couponsApi, bannersApi
+  ordersApi, usersAdminApi, reviewsApi, couponsApi, bannersApi,
+  faqsAdminApi, testimonialsAdminApi, siteSettingsAdminApi
 } from './adminApi';
 
 // ─── Dashboard Thunks ────────────────────────────────────────────────────────
@@ -38,9 +39,31 @@ export const updateProduct = createAsyncThunk('admin/updateProduct', async ({ id
   catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to update product'); }
 });
 
+export const toggleProductStatus = createAsyncThunk('admin/toggleProductStatus', async ({ id, status }, { rejectWithValue }) => {
+  try {
+    const res = await productsApi.toggleStatus(id, status);
+    return res.data.data;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || 'Failed to update product status');
+  }
+});
+
 export const deleteProduct = createAsyncThunk('admin/deleteProduct', async (id, { rejectWithValue }) => {
-  try { await productsApi.softDelete(id); return id; }
-  catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to delete product'); }
+  try {
+    const res = await productsApi.softDelete(id);
+    return res.data?.data || { _id: id, status: "inactive", isActive: false };
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || 'Failed to deactivate product');
+  }
+});
+
+export const hardDeleteProduct = createAsyncThunk('admin/hardDeleteProduct', async (id, { rejectWithValue }) => {
+  try {
+    await productsApi.hardDelete(id);
+    return id;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || 'Failed to permanently delete product');
+  }
 });
 
 export const toggleProductFlag = createAsyncThunk('admin/toggleProductFlag', async ({ id, flag, value }, { rejectWithValue }) => {
@@ -179,6 +202,60 @@ export const deleteBanner = createAsyncThunk('admin/deleteBanner', async (id, { 
   catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed'); }
 });
 
+// ─── FAQs Thunks ─────────────────────────────────────────────────────────────
+export const fetchAdminFaqs = createAsyncThunk('admin/fetchFaqs', async (params, { rejectWithValue }) => {
+  try { const res = await faqsAdminApi.getAll(params); return res.data.data; }
+  catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to fetch FAQs'); }
+});
+export const createFaq = createAsyncThunk('admin/createFaq', async (data, { rejectWithValue }) => {
+  try { const res = await faqsAdminApi.create(data); return res.data.data; }
+  catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to create FAQ'); }
+});
+export const updateFaq = createAsyncThunk('admin/updateFaq', async ({ id, data }, { rejectWithValue }) => {
+  try { const res = await faqsAdminApi.update(id, data); return res.data.data; }
+  catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to update FAQ'); }
+});
+export const deleteFaq = createAsyncThunk('admin/deleteFaq', async (id, { rejectWithValue }) => {
+  try { await faqsAdminApi.delete(id); return id; }
+  catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to delete FAQ'); }
+});
+export const toggleFaqStatus = createAsyncThunk('admin/toggleFaqStatus', async (id, { rejectWithValue }) => {
+  try { const res = await faqsAdminApi.toggleStatus(id); return res.data.data; }
+  catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to toggle FAQ status'); }
+});
+
+// ─── Testimonials Thunks ─────────────────────────────────────────────────────
+export const fetchAdminTestimonials = createAsyncThunk('admin/fetchTestimonials', async (params, { rejectWithValue }) => {
+  try { const res = await testimonialsAdminApi.getAll(params); return res.data.data; }
+  catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to fetch Testimonials'); }
+});
+export const createTestimonial = createAsyncThunk('admin/createTestimonial', async (data, { rejectWithValue }) => {
+  try { const res = await testimonialsAdminApi.create(data); return res.data.data; }
+  catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to create Testimonial'); }
+});
+export const updateTestimonial = createAsyncThunk('admin/updateTestimonial', async ({ id, data }, { rejectWithValue }) => {
+  try { const res = await testimonialsAdminApi.update(id, data); return res.data.data; }
+  catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to update Testimonial'); }
+});
+export const deleteTestimonial = createAsyncThunk('admin/deleteTestimonial', async (id, { rejectWithValue }) => {
+  try { await testimonialsAdminApi.delete(id); return id; }
+  catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to delete Testimonial'); }
+});
+export const toggleTestimonialStatus = createAsyncThunk('admin/toggleTestimonialStatus', async (id, { rejectWithValue }) => {
+  try { const res = await testimonialsAdminApi.toggleStatus(id); return res.data.data; }
+  catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to toggle Testimonial status'); }
+});
+
+// ─── Site Settings Thunks ────────────────────────────────────────────────────
+export const fetchAdminSiteSettings = createAsyncThunk('admin/fetchSiteSettings', async (_, { rejectWithValue }) => {
+  try { const res = await siteSettingsAdminApi.getSettings(); return res.data.data; }
+  catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to fetch Site Settings'); }
+});
+export const updateAdminSiteSettings = createAsyncThunk('admin/updateSiteSettings', async (data, { rejectWithValue }) => {
+  try { const res = await siteSettingsAdminApi.updateSettings(data); return res.data.data; }
+  catch (err) { return rejectWithValue(err.response?.data?.message || 'Failed to update Site Settings'); }
+});
+
 // ─── Slice ───────────────────────────────────────────────────────────────────
 const adminSlice = createSlice({
   name: 'admin',
@@ -199,6 +276,12 @@ const adminSlice = createSlice({
     coupons: [], couponsPagination: null,
     // Banners
     banners: [], bannersPagination: null,
+    // FAQs
+    faqs: [],
+    // Testimonials
+    testimonials: [],
+    // Site Settings
+    siteSettings: null,
     // Global
     loading: false, error: null,
   },
@@ -234,8 +317,27 @@ const adminSlice = createSlice({
         const i = state.products.findIndex(p => p._id === payload._id);
         if (i !== -1) state.products[i] = payload;
       })
+      .addCase(toggleProductStatus.fulfilled, (state, { payload }) => {
+        const i = state.products.findIndex(p => p._id === payload._id);
+        if (i !== -1) state.products[i] = payload;
+      })
       .addCase(deleteProduct.fulfilled, (state, { payload }) => {
+        const targetId = payload?._id || payload;
+        const i = state.products.findIndex(p => p._id === targetId);
+        if (i !== -1) {
+          state.products[i] = {
+            ...state.products[i],
+            ...(typeof payload === 'object' ? payload : {}),
+            status: "inactive",
+            isActive: false
+          };
+        }
+      })
+      .addCase(hardDeleteProduct.fulfilled, (state, { payload }) => {
         state.products = state.products.filter(p => p._id !== payload);
+        if (state.productsPagination && state.productsPagination.total > 0) {
+          state.productsPagination.total -= 1;
+        }
       })
       .addCase(toggleProductFlag.fulfilled, (state, { payload }) => {
         const i = state.products.findIndex(p => p._id === payload._id);
@@ -368,6 +470,57 @@ const adminSlice = createSlice({
       })
       .addCase(deleteBanner.fulfilled, (state, { payload }) => {
         state.banners = state.banners.filter(b => b._id !== payload);
+      })
+
+      // FAQs
+      .addCase(fetchAdminFaqs.pending, pending)
+      .addCase(fetchAdminFaqs.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.faqs = payload.faqs || payload;
+      })
+      .addCase(fetchAdminFaqs.rejected, rejected)
+      .addCase(createFaq.fulfilled, (state, { payload }) => { state.faqs.unshift(payload); })
+      .addCase(updateFaq.fulfilled, (state, { payload }) => {
+        const i = state.faqs.findIndex(f => f._id === payload._id);
+        if (i !== -1) state.faqs[i] = payload;
+      })
+      .addCase(toggleFaqStatus.fulfilled, (state, { payload }) => {
+        const i = state.faqs.findIndex(f => f._id === payload._id);
+        if (i !== -1) state.faqs[i] = payload;
+      })
+      .addCase(deleteFaq.fulfilled, (state, { payload }) => {
+        state.faqs = state.faqs.filter(f => f._id !== payload);
+      })
+
+      // Testimonials
+      .addCase(fetchAdminTestimonials.pending, pending)
+      .addCase(fetchAdminTestimonials.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.testimonials = payload.testimonials || payload;
+      })
+      .addCase(fetchAdminTestimonials.rejected, rejected)
+      .addCase(createTestimonial.fulfilled, (state, { payload }) => { state.testimonials.unshift(payload); })
+      .addCase(updateTestimonial.fulfilled, (state, { payload }) => {
+        const i = state.testimonials.findIndex(t => t._id === payload._id);
+        if (i !== -1) state.testimonials[i] = payload;
+      })
+      .addCase(toggleTestimonialStatus.fulfilled, (state, { payload }) => {
+        const i = state.testimonials.findIndex(t => t._id === payload._id);
+        if (i !== -1) state.testimonials[i] = payload;
+      })
+      .addCase(deleteTestimonial.fulfilled, (state, { payload }) => {
+        state.testimonials = state.testimonials.filter(t => t._id !== payload);
+      })
+
+      // Site Settings
+      .addCase(fetchAdminSiteSettings.pending, pending)
+      .addCase(fetchAdminSiteSettings.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.siteSettings = payload;
+      })
+      .addCase(fetchAdminSiteSettings.rejected, rejected)
+      .addCase(updateAdminSiteSettings.fulfilled, (state, { payload }) => {
+        state.siteSettings = payload;
       });
   },
 });

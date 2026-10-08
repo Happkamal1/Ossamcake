@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAdminProducts, fetchAdminCategories, deleteProduct, toggleProductFlag, createProduct, updateProduct } from "@/features/admin/adminSlice";
+import { fetchAdminProducts, fetchAdminCategories, toggleProductStatus, hardDeleteProduct, toggleProductFlag, createProduct, updateProduct } from "@/features/admin/adminSlice";
 import ProductModal from "@/components/admin/ProductModal";
 import ConfirmModal from "@/components/admin/ConfirmModal";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { toast } from "sonner";
-import { Plus, Search, Pencil, Trash2, Star, Flame, Award, Zap, RefreshCw } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Star, Flame, Award, Zap, RefreshCw, Power, PowerOff, Loader2 } from "lucide-react";
+import { getImageUrl } from "@/lib/api";
 
 const FLAGS = [
   { key: "isBestSeller", label: "Best Seller", icon: Award, color: "text-amber-600 bg-amber-100" },
@@ -26,7 +27,9 @@ export default function AdminProducts() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [permanentDeleteTarget, setPermanentDeleteTarget] = useState(null);
+  const [isDeletingPermanent, setIsDeletingPermanent] = useState(false);
 
   // Fetch products with full criteria
   useEffect(() => {
@@ -84,15 +87,52 @@ export default function AdminProducts() {
     }
   };
 
-  const handleDelete = async () => {
-    const res = await dispatch(deleteProduct(deleteTarget._id));
-    if (res.meta.requestStatus === "fulfilled") {
-      toast.success("Product deleted");
-      setDeleteTarget(null);
-      // Reload current list
-      dispatch(fetchAdminProducts({ search, status: statusFilter !== "all" ? statusFilter : undefined, category: categoryFilter !== "all" ? categoryFilter : undefined, sort, page, limit: 10 }));
-    } else {
-      toast.error(res.payload || "Failed to delete product");
+  const handleToggleStatus = async (product) => {
+    if (actionLoadingId) return;
+    const isCurrentlyActive = product.status === "active" || (product.isActive && product.status !== "inactive");
+    const nextStatus = isCurrentlyActive ? "inactive" : "active";
+
+    setActionLoadingId(product._id);
+    try {
+      const res = await dispatch(toggleProductStatus({ id: product._id, status: nextStatus }));
+      if (res.meta.requestStatus === "fulfilled") {
+        toast.success(nextStatus === "active" ? `"${product.name}" activated!` : `"${product.name}" deactivated!`);
+      } else {
+        toast.error(res.payload || "Failed to update product status");
+      }
+    } catch {
+      toast.error("Failed to update product status");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handlePermanentDelete = async () => {
+    if (!permanentDeleteTarget || isDeletingPermanent) return;
+    setIsDeletingPermanent(true);
+    setActionLoadingId(permanentDeleteTarget._id);
+    try {
+      const res = await dispatch(hardDeleteProduct(permanentDeleteTarget._id));
+      if (res.meta.requestStatus === "fulfilled") {
+        toast.success(`"${permanentDeleteTarget.name}" permanently deleted.`);
+        setPermanentDeleteTarget(null);
+        // Reload current list
+        dispatch(fetchAdminProducts({
+          search,
+          status: statusFilter !== "all" ? statusFilter : undefined,
+          category: categoryFilter !== "all" ? categoryFilter : undefined,
+          sort,
+          page,
+          limit: 10
+        }));
+      } else {
+        toast.error(res.payload || "Failed to permanently delete product");
+      }
+    } catch {
+      toast.error("Failed to permanently delete product");
+    } finally {
+      setIsDeletingPermanent(false);
+      setActionLoadingId(null);
     }
   };
 
@@ -167,7 +207,7 @@ export default function AdminProducts() {
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 {["Product", "Base Price", "Discount", "Flags", "Status", "Actions"].map(h => (
-                  <th key={h} className="text-left text-xs font-bold text-slate-500 px-5 py-3.5 whitespace-nowrap">{h}</th>
+                  <th key={h} className={`${h === "Actions" ? "text-right" : "text-left"} text-xs font-bold text-slate-500 px-5 py-3.5 whitespace-nowrap`}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -185,7 +225,7 @@ export default function AdminProducts() {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       {product.thumbnail && (
-                        <img src={product.thumbnail} alt={product.name} className="w-10 h-10 rounded-xl object-cover shrink-0 bg-slate-100" />
+                        <img src={getImageUrl(product.thumbnail)} alt={product.name} className="w-10 h-10 rounded-xl object-cover shrink-0 bg-slate-100" />
                       )}
                       <div className="min-w-0">
                         <p className="font-semibold text-slate-800 truncate max-w-[180px]">{product.name}</p>
@@ -209,12 +249,62 @@ export default function AdminProducts() {
                   </td>
                   <td className="px-5 py-4"><StatusBadge status={product.status || (product.isActive ? "active" : "inactive")} /></td>
                   <td className="px-5 py-4">
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => setEditing(product)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-blue-600 transition-colors">
-                        <Pencil size={15} />
+                    <div className="flex items-center justify-end gap-1.5 flex-wrap sm:flex-nowrap">
+                      {/* 1. Edit */}
+                      <button
+                        onClick={() => setEditing(product)}
+                        disabled={!!actionLoadingId}
+                        title="Edit Product"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-100 text-slate-700 font-medium text-xs transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Pencil size={13} className="text-slate-500" />
+                        <span>Edit</span>
                       </button>
-                      <button onClick={() => setDeleteTarget(product)} className="p-2 rounded-lg hover:bg-red-50 text-slate-500 hover:text-red-600 transition-colors">
-                        <Trash2 size={15} />
+
+                      {/* 2. Activate / Deactivate */}
+                      {(product.status === "inactive" || product.isActive === false) ? (
+                        <button
+                          onClick={() => handleToggleStatus(product)}
+                          disabled={!!actionLoadingId}
+                          title="Activate Product"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-700 font-medium text-xs transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {actionLoadingId === product._id ? (
+                            <Loader2 size={13} className="animate-spin text-emerald-600" />
+                          ) : (
+                            <Power size={13} className="text-emerald-600" />
+                          )}
+                          <span>Activate</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleToggleStatus(product)}
+                          disabled={!!actionLoadingId}
+                          title="Deactivate Product"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-700 font-medium text-xs transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {actionLoadingId === product._id ? (
+                            <Loader2 size={13} className="animate-spin text-amber-600" />
+                          ) : (
+                            <PowerOff size={13} className="text-amber-600" />
+                          )}
+                          <span>Deactivate</span>
+                        </button>
+                      )}
+
+                      {/* 3. Delete Permanently */}
+                      <button
+                        onClick={() => setPermanentDeleteTarget(product)}
+                        disabled={!!actionLoadingId}
+                        title="Permanently delete product and media"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-200 bg-red-50/60 hover:bg-red-100 text-red-700 font-medium text-xs transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {actionLoadingId === product._id && isDeletingPermanent ? (
+                          <Loader2 size={13} className="animate-spin text-red-600" />
+                        ) : (
+                          <Trash2 size={13} className="text-red-600" />
+                        )}
+                        <span>Delete Permanently</span>
                       </button>
                     </div>
                   </td>
@@ -256,11 +346,15 @@ export default function AdminProducts() {
       <ProductModal open={modalOpen} onClose={() => setModalOpen(false)} onSubmit={handleCreate} loading={loading} />
       <ProductModal open={!!editing} onClose={() => setEditing(null)} onSubmit={handleUpdate} initial={editing} loading={loading} />
       <ConfirmModal
-        open={!!deleteTarget}
-        title="Delete Product?"
-        message={`"${deleteTarget?.name}" will be marked as inactive. Orders won't be affected.`}
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
+        open={!!permanentDeleteTarget}
+        title="Permanently Delete Product?"
+        message="This will permanently delete the product and its associated images. This action cannot be undone."
+        confirmKeyword="DELETE"
+        confirmLabel="Delete Permanently"
+        danger={true}
+        loading={isDeletingPermanent}
+        onConfirm={handlePermanentDelete}
+        onCancel={() => !isDeletingPermanent && setPermanentDeleteTarget(null)}
       />
     </div>
   );

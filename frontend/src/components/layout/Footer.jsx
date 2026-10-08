@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   MapPin,
   Phone,
@@ -8,7 +9,8 @@ import {
   Instagram,
   Youtube,
   Twitter,
-  ShieldCheck
+  ShieldCheck,
+  Share2,
 } from "lucide-react";
 
 import FooterColumn from "./Footer/FooterColumn";
@@ -16,6 +18,24 @@ import NewsletterForm from "./Footer/NewsletterForm";
 import { FOOTER_LINKS } from "@/config/navigation";
 
 export default function Footer() {
+  const { settings } = useSelector((state) => state.siteSettings);
+
+  const businessName = settings?.businessName || "OssamCake";
+  const aboutText = settings?.footer?.aboutText || "Crafting premium luxury celebrations with sweet elegance since 2010. Every cake is hand-finished by master pastry artists.";
+  const copyrightText = settings?.footer?.copyrightText || "OssamCake. All rights reserved.";
+  const phone = settings?.phone || "+1 (555) 123-4567";
+  const email = settings?.email || "hello@ossamcake.com";
+  const address = settings?.address || "123 Baker Street, Manhattan, New York, NY 10001";
+  const workingHours = settings?.workingHours || "Mon - Sun: 8:00 AM - 10:00 PM";
+  const socialLinks = settings?.socialLinks || {};
+
+  const socialItems = [
+    { icon: Facebook, href: socialLinks.facebook || "https://facebook.com", name: "Facebook" },
+    { icon: Instagram, href: socialLinks.instagram || "https://instagram.com", name: "Instagram" },
+    { icon: Youtube, href: socialLinks.youtube || "https://youtube.com", name: "YouTube" },
+    { icon: Twitter, href: socialLinks.twitter || "https://twitter.com", name: "X (Twitter)" },
+  ].filter(s => Boolean(s.href));
+
   return (
     <footer
       className="font-sans border-t-4 border-primary overflow-hidden relative transition-colors duration-500"
@@ -59,14 +79,13 @@ export default function Footer() {
         {/* 1. Brand Column */}
         <div className="lg:col-span-1 space-y-6">
           <Link to="/" className="flex items-center group">
-            <img src="/images/logo/logo.png" alt="OssamCake" className="h-[80px] object-contain group-hover:scale-105 transition-transform" />
+            <img src="/images/logo/logo.png" alt={businessName} className="h-[80px] object-contain group-hover:scale-105 transition-transform" />
           </Link>
           <p
             className="text-sm leading-relaxed"
             style={{ color: "hsl(var(--footer-muted))" }}
           >
-            Crafting premium luxury celebrations with sweet elegance since 2010.
-            Every cake is hand-finished by master pastry artists.
+            {aboutText}
           </p>
 
           <div className="space-y-3 pt-2">
@@ -77,15 +96,12 @@ export default function Footer() {
               Follow Us
             </span>
             <div className="flex gap-3">
-              {[
-                { icon: Facebook, href: "#", name: "Facebook" },
-                { icon: Instagram, href: "#", name: "Instagram" },
-                { icon: Youtube, href: "#", name: "YouTube" },
-                { icon: Twitter, href: "#", name: "X (Twitter)" }
-              ].map(({ icon: Icon, href, name }, idx) => (
+              {socialItems.map(({ icon: Icon, href, name }, idx) => (
                 <a
                   key={idx}
                   href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={name}
                   className="h-10 w-10 rounded-full hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-all duration-300 shadow-inner"
                   style={{
@@ -126,25 +142,25 @@ export default function Footer() {
             <li className="flex items-start gap-3 group">
               <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5 group-hover:animate-bounce" />
               <span style={{ color: "hsl(var(--footer-muted))" }}>
-                123 Baker Street, Manhattan, New York, NY 10001
+                {address}
               </span>
             </li>
             <li className="flex items-center gap-3 group">
               <Phone className="h-5 w-5 text-primary shrink-0 group-hover:animate-pulse" />
-              <span style={{ color: "hsl(var(--footer-muted))" }}>
-                +1 (555) 123-4567
-              </span>
+              <a href={`tel:${phone.replace(/\s+/g, '')}`} style={{ color: "hsl(var(--footer-muted))" }} className="hover:text-primary transition-colors">
+                {phone}
+              </a>
             </li>
             <li className="flex items-center gap-3 group">
               <Mail className="h-5 w-5 text-primary shrink-0 group-hover:scale-110 transition-transform" />
-              <span style={{ color: "hsl(var(--footer-muted))" }}>
-                hello@ossamcake.com
-              </span>
+              <a href={`mailto:${email}`} style={{ color: "hsl(var(--footer-muted))" }} className="hover:text-primary transition-colors">
+                {email}
+              </a>
             </li>
             <li className="flex items-center gap-3">
               <Clock className="h-5 w-5 text-primary shrink-0" />
               <span style={{ color: "hsl(var(--footer-muted))" }}>
-                Mon - Sun: 8:00 AM - 10:00 PM
+                {workingHours}
               </span>
             </li>
           </ul>
@@ -164,7 +180,7 @@ export default function Footer() {
             className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs text-center sm:text-left font-medium"
             style={{ color: "hsl(var(--footer-muted))" }}
           >
-            <p>&copy; {new Date().getFullYear()} OssamCake. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} {copyrightText}</p>
             <span className="hidden sm:inline" style={{ color: "hsl(var(--footer-fg) / 0.3)" }}>|</span>
             <div className="flex gap-4">
               <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>

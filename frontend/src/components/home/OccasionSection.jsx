@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { Calendar, Heart, Gift, PartyPopper, Star, Cake, Sparkles, Sun } from "lucide-react";
+import { getImageUrl } from "@/lib/api";
 
 // Icon mapping for occasions that have no image in DB yet
 const ICON_MAP = {
@@ -70,7 +71,7 @@ export default function OccasionSection() {
                       {occ.image ? (
                         <div className="h-16 w-16 rounded-full overflow-hidden border border-border mb-4 group-hover:scale-110 transition-transform">
                           <img
-                            src={occ.image}
+                            src={getImageUrl(occ.image)}
                             alt={occ.name}
                             className="h-full w-full object-cover"
                             loading="lazy"

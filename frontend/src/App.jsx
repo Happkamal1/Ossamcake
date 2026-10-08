@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { AuthProvider } from "@/context/AuthContext";
+import { fetchPublicSettings } from "@/features/siteSettings/siteSettingsSlice";
 
 import { applyTheme } from "@/utils/applyTheme";
 import Header from "@/components/layout/Header";
@@ -39,6 +40,9 @@ import AdminReviews from "@/Pages/Admin/AdminReviews";
 import AdminCoupons from "@/Pages/Admin/AdminCoupons";
 import AdminBanners from "@/Pages/Admin/AdminBanners";
 import AdminNotifications from "@/Pages/Admin/AdminNotifications";
+import AdminFAQs from "@/Pages/Admin/AdminFAQs";
+import AdminTestimonials from "@/Pages/Admin/AdminTestimonials";
+import AdminSiteSettings from "@/Pages/Admin/AdminSiteSettings";
 import NotificationsPage from "@/Pages/Notifications/NotificationsPage";
 import NotificationDetailPage from "@/Pages/Notifications/NotificationDetailPage";
 
@@ -56,11 +60,16 @@ function CustomerLayout() {
 }
 
 export default function App() {
+  const dispatch = useDispatch();
   const activeTheme = useSelector((state) => state.theme.activeTheme);
 
   useEffect(() => {
     applyTheme(activeTheme);
   }, [activeTheme]);
+
+  useEffect(() => {
+    dispatch(fetchPublicSettings());
+  }, [dispatch]);
 
   return (
     <AuthProvider>
@@ -79,6 +88,9 @@ export default function App() {
             <Route path="coupons" element={<AdminCoupons />} />
             <Route path="banners" element={<AdminBanners />} />
             <Route path="notifications" element={<AdminNotifications />} />
+            <Route path="faqs" element={<AdminFAQs />} />
+            <Route path="testimonials" element={<AdminTestimonials />} />
+            <Route path="site-settings" element={<AdminSiteSettings />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 

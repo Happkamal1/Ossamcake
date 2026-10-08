@@ -30,6 +30,9 @@ const getRazorpayKey = asyncHandler(async (req, res) => {
       new ApiResponse(200, { keyId }, "Razorpay key retrieved successfully")
     );
   } catch (error) {
+    if (process.env.NODE_ENV === "production") {
+      throw new ApiError(500, "Payment gateway configuration error: Razorpay credentials are missing in production.");
+    }
     // If Razorpay not configured, return user-friendly message
     res.status(503).json(
       new ApiResponse(
@@ -231,12 +234,103 @@ const retryPayment = asyncHandler(async (req, res) => {
   );
 });
 
+/**
+ * @desc    Get Stripe Publishable Key for frontend
+ * @route   GET /api/v1/payments/stripe/key
+ * @access  Public
+ */
+const getStripeKey = asyncHandler(async (req, res) => {
+  if (process.env.ENABLE_STRIPE !== "true") {
+    return res.status(200).json(
+      new ApiResponse(200, { publishableKey: "", isEnabled: false }, "Stripe payments are currently disabled")
+    );
+  }
+  const publishableKey = paymentService.getStripePublishableKey();
+  res.status(200).json(
+    new ApiResponse(200, { publishableKey, isEnabled: true }, "Stripe publishable key retrieved")
+  );
+});
+
+/**
+ * @desc    Create Stripe PaymentIntent
+ * @route   POST /api/v1/payments/stripe/create-intent
+ * @access  Protected
+ */
+const createStripeIntent = asyncHandler(async (req, res) => {
+  if (process.env.ENABLE_STRIPE !== "true") {
+    throw new ApiError(503, "Stripe payments are currently disabled. Please use Razorpay or Cash on Delivery.");
+  }
+
+  const result = await paymentService.createStripePaymentIntent(
+    req.user._id,
+    req.body
+  );
+
+  res.status(200).json(
+    new ApiResponse(200, result, "Stripe PaymentIntent created successfully")
+  );
+});
+
+/**
+ * @desc    Confirm Stripe Payment / Check verification status
+ * @route   POST /api/v1/payments/stripe/confirm
+ * @access  Protected
+ */
+const confirmStripePayment = asyncHandler(async (req, res) => {
+  if (process.env.ENABLE_STRIPE !== "true") {
+    throw new ApiError(503, "Stripe payments are currently disabled. Please use Razorpay or Cash on Delivery.");
+  }
+
+  const result = await paymentService.confirmStripePayment(
+    req.user._id,
+    req.body
+  );
+
+  res.status(200).json(
+    new ApiResponse(200, result, "Stripe payment confirmed successfully")
+  );
+});
+
+/**
+ * @desc    Handle Stripe Webhook
+ * @route   POST /api/v1/payments/stripe/webhook
+ * @access  Public (signature verified internally)
+ */
+const handleStripeWebhook = asyncHandler(async (req, res) => {
+  if (process.env.ENABLE_STRIPE !== "true") {
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        { received: true, processed: false, disabled: true },
+        "Stripe webhook processing is currently disabled"
+      )
+    );
+  }
+
+  const signature = req.headers["stripe-signature"];
+
+  if (!signature) {
+    throw new ApiError(400, "Missing stripe-signature header");
+  }
+
+  const rawBody = req.rawBody || req.body;
+  const result = await paymentService.handleStripeWebhook(rawBody, signature);
+
+  res.status(200).json(
+    new ApiResponse(200, result, "Stripe webhook processed successfully")
+  );
+});
+
 module.exports = {
   getConfigStatus,
   getRazorpayKey,
+  getStripeKey,
   createPaymentOrder,
   verifyPayment,
   handlePaymentFailure,
+  createStripeIntent,
+  confirmStripePayment,
+  handleStripeWebhook,
   getPaymentStatus,
   getPaymentHistory,
   handleWebhook,

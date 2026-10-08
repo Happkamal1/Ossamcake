@@ -25,6 +25,7 @@ const {
   deletePasskey,
   getPasskeySignupOptions,
   verifyPasskeySignup,
+  refreshToken,
 } = require("../controllers/authController");
 
 const {
@@ -44,6 +45,7 @@ router.post("/verify-email", validateEmailAndOtp, checkValidation, verifyEmail);
 router.post("/resend-otp", validateEmailOnly, checkValidation, resendOtp);
 
 router.post("/login", validateLogin, checkValidation, loginUser);
+router.post("/refresh-token", refreshToken);
 
 router.post("/forgot-password", validateEmailOnly, checkValidation, forgotPassword);
 router.post("/verify-reset-otp", validateEmailAndOtp, checkValidation, verifyResetOtp);

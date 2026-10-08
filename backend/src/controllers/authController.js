@@ -13,6 +13,13 @@ const cookieOptions = {
   maxAge: 24 * 60 * 60 * 1000, // 1 day
 };
 
+const refreshCookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
+
 /**
  * @desc    Register a new user
  * @route   POST /api/auth/register
@@ -63,10 +70,11 @@ const loginUser = asyncHandler(async (req, res) => {
     );
   }
 
-  const { user, accessToken } = result;
+  const { user, accessToken, refreshToken } = result;
 
   // Set JWT in HTTP-Only Cookie
   res.cookie("jwt", accessToken, cookieOptions);
+  res.cookie("refresh_token", refreshToken, refreshCookieOptions);
 
   res.status(200).json(
     new ApiResponse(200, { user, token: accessToken }, "Login successful")
@@ -115,11 +123,20 @@ const resetPassword = asyncHandler(async (req, res) => {
  * @access  Protected
  */
 const logoutUser = asyncHandler(async (req, res) => {
-  // Clear the cookie
+  // Clear the cookies
   res.cookie("jwt", "", {
     httpOnly: true,
     expires: new Date(0),
   });
+  res.cookie("refresh_token", "", {
+    httpOnly: true,
+    expires: new Date(0),
+  });
+
+  // Remove refresh token from DB if user is logged in
+  if (req.user) {
+    await User.findByIdAndUpdate(req.user._id, { $unset: { refreshToken: 1 } });
+  }
 
   res.status(200).json(new ApiResponse(200, null, "Logged out successfully"));
 });
@@ -173,9 +190,10 @@ const deleteAddress = asyncHandler(async (req, res) => {
  */
 const loginGoogle = asyncHandler(async (req, res) => {
   const { idToken } = req.body;
-  const { user, accessToken } = await authService.loginWithGoogle(idToken);
+  const { user, accessToken, refreshToken } = await authService.loginWithGoogle(idToken);
 
   res.cookie("jwt", accessToken, cookieOptions);
+  res.cookie("refresh_token", refreshToken, refreshCookieOptions);
 
   res.status(200).json(
     new ApiResponse(200, { user, token: accessToken }, "Google login successful")
@@ -201,10 +219,11 @@ const verify2FALogin = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Email and OTP are required");
   }
 
-  const { user, accessToken } = await authService.verify2FALogin(email, otp);
+  const { user, accessToken, refreshToken } = await authService.verify2FALogin(email, otp);
 
   // Set JWT in HTTP-Only Cookie
   res.cookie("jwt", accessToken, cookieOptions);
+  res.cookie("refresh_token", refreshToken, refreshCookieOptions);
 
   res.status(200).json(
     new ApiResponse(200, { user, token: accessToken }, "2FA Verification successful")
@@ -290,13 +309,14 @@ const verifyPasskeyLogin = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
-  const { user: loggedInUser, accessToken } = await passkeyService.verifyAuthentication(
+  const { user: loggedInUser, accessToken, refreshToken } = await passkeyService.verifyAuthentication(
     user,
     req.body,
     expectedChallenge
   );
 
   res.cookie("jwt", accessToken, cookieOptions);
+  res.cookie("refresh_token", refreshToken, refreshCookieOptions);
   
   res.status(200).json(
     new ApiResponse(200, { user: loggedInUser, token: accessToken }, "Login successful")
@@ -355,7 +375,7 @@ const verifyPasskeySignup = asyncHandler(async (req, res) => {
   const { challenge: expectedChallenge, email, name } = JSON.parse(regCookie);
   res.clearCookie("regChallenge");
 
-  const { user, accessToken } = await passkeyService.verifySignup(
+  const { user, accessToken, refreshToken } = await passkeyService.verifySignup(
     email,
     name,
     req.body,
@@ -363,10 +383,53 @@ const verifyPasskeySignup = asyncHandler(async (req, res) => {
   );
 
   res.cookie("jwt", accessToken, cookieOptions);
+  res.cookie("refresh_token", refreshToken, refreshCookieOptions);
 
   res.status(201).json(
     new ApiResponse(201, { user, token: accessToken }, "Account created and logged in successfully via Passkey")
   );
+});
+
+/**
+ * @desc    Refresh access token using refresh token
+ * @route   POST /api/auth/refresh-token
+ * @access  Public
+ */
+const refreshToken = asyncHandler(async (req, res) => {
+  const token = req.cookies.refresh_token;
+
+  if (!token) {
+    throw new ApiError(401, "Not authorized, no refresh token found");
+  }
+
+  const jwt = require("jsonwebtoken");
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET
+    );
+
+    const user = await User.findById(decoded._id);
+    if (!user || user.refreshToken !== token) {
+      throw new ApiError(403, "Invalid refresh token");
+    }
+
+    // Generate new tokens
+    const accessToken = user.generateAccessToken();
+    const newRefreshToken = user.generateRefreshToken();
+
+    user.refreshToken = newRefreshToken;
+    await user.save();
+
+    res.cookie("jwt", accessToken, cookieOptions);
+    res.cookie("refresh_token", newRefreshToken, refreshCookieOptions);
+
+    res.status(200).json(
+      new ApiResponse(200, { token: accessToken }, "Token refreshed successfully")
+    );
+  } catch (error) {
+    throw new ApiError(403, "Invalid or expired refresh token");
+  }
 });
 
 module.exports = {
@@ -393,4 +456,5 @@ module.exports = {
   deletePasskey,
   getPasskeySignupOptions,
   verifyPasskeySignup,
+  refreshToken,
 };

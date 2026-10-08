@@ -9,9 +9,22 @@ const crypto = require("crypto");
 const User = require("../models/User");
 const ApiError = require("../utils/ApiError");
 
-const rpId = process.env.RP_ID || "localhost";
+const rpId = process.env.RP_ID || (process.env.NODE_ENV !== "production" ? "localhost" : undefined);
 const rpName = process.env.RP_NAME || "OssamCake E-Commerce";
-const expectedOrigin = process.env.FRONTEND_URL || "http://localhost:5173";
+
+let expectedOrigin;
+if (process.env.FRONTEND_URL) {
+  expectedOrigin = process.env.FRONTEND_URL.split(",").map(o => o.trim());
+} else if (process.env.NODE_ENV !== "production") {
+  expectedOrigin = "http://localhost:5173";
+}
+
+if (process.env.NODE_ENV === "production") {
+  if (!rpId || !expectedOrigin) {
+    console.error("FATAL: RP_ID and FRONTEND_URL must be set in production for WebAuthn passkeys.");
+    process.exit(1);
+  }
+}
 
 /**
  * Generate options for Passkey registration (existing authenticated user)
@@ -155,9 +168,13 @@ const verifyAuthentication = async (user, response, expectedChallenge) => {
   await user.save();
 
   const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+  user.refreshToken = refreshToken;
+  await user.save();
+
   const loggedInUser = await User.findById(user._id).select("-password");
 
-  return { user: loggedInUser, accessToken };
+  return { user: loggedInUser, accessToken, refreshToken };
 };
 
 /**
@@ -233,9 +250,13 @@ const verifySignup = async (email, name, response, expectedChallenge) => {
   });
 
   const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+  user.refreshToken = refreshToken;
+  await user.save();
+
   const loggedInUser = await User.findById(user._id).select("-password");
 
-  return { user: loggedInUser, accessToken };
+  return { user: loggedInUser, accessToken, refreshToken };
 };
 
 /**
